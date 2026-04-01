@@ -10,7 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
     
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
@@ -18,14 +25,21 @@ jobs:
         flutter-version: '3.16.0'
         channel: 'stable'
     
+    - name: Check project structure
+      run: |
+        ls -la
+        find . -name "pubspec.yaml" -type f
+    
     - name: Install dependencies
+      working-directory: ./yisi_helper
       run: flutter pub get
     
     - name: Build APK
+      working-directory: ./yisi_helper
       run: flutter build apk --release
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: yisi-helper-apk
-        path: build/app/outputs/flutter-apk/app-release.apk
+        path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
