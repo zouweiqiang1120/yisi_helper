@@ -27,17 +27,21 @@ jobs:
     
     - name: Unzip project
       run: |
-        unzip yisi_helper.zip
+        unzip -o yisi_helper.zip
         ls -la
         ls -la yisi_helper/
     
     - name: Install dependencies
       working-directory: ./yisi_helper
-      run: flutter pub get
+      run: |
+        ls -la
+        flutter pub get
     
     - name: Build APK
       working-directory: ./yisi_helper
-      run: flutter build apk --release
+      run: |
+        ls -la
+        flutter build apk --release --verbose
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
