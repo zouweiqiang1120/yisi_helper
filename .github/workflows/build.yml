@@ -28,6 +28,7 @@ jobs:
     - name: Unzip project
       run: |
         unzip yisi_helper.zip
+        ls -la
         ls -la yisi_helper/
     
     - name: Install dependencies
