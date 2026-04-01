@@ -25,9 +25,10 @@ jobs:
         flutter-version: '3.16.0'
         channel: 'stable'
     
-    - name: Check project structure
+    - name: Extract project
       run: |
         ls -la
+        unzip -o yisi_helper.zip
         ls -la yisi_helper/
     
     - name: Install dependencies
