@@ -25,23 +25,22 @@ jobs:
         flutter-version: '3.16.0'
         channel: 'stable'
     
-    - name: Unzip project
+    - name: Check and prepare project
       run: |
-        unzip -o yisi_helper.zip
         ls -la
+        if [ -f "yisi_helper.zip" ]; then
+          echo "Found zip file, extracting..."
+          unzip -o yisi_helper.zip
+        fi
         ls -la yisi_helper/
     
     - name: Install dependencies
       working-directory: ./yisi_helper
-      run: |
-        ls -la
-        flutter pub get
+      run: flutter pub get
     
     - name: Build APK
       working-directory: ./yisi_helper
-      run: |
-        ls -la
-        flutter build apk --release --verbose
+      run: flutter build apk --release
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
