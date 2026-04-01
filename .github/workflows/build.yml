@@ -25,28 +25,18 @@ jobs:
         flutter-version: '3.16.0'
         channel: 'stable'
     
-    - name: Check and prepare project
+    - name: Check project structure
       run: |
         ls -la
-        if [ -d "yisi_helper" ]; then
-          echo "Project already extracted"
-        elif [ -f "yisi_helper.zip" ]; then
-          echo "Extracting zip file..."
-          unzip -o yisi_helper.zip
-        fi
         ls -la yisi_helper/
     
     - name: Install dependencies
       working-directory: ./yisi_helper
-      run: |
-        ls -la
-        flutter pub get
+      run: flutter pub get
     
     - name: Build APK
       working-directory: ./yisi_helper
-      run: |
-        ls -la
-        flutter build apk --release --verbose
+      run: flutter build apk --release
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
