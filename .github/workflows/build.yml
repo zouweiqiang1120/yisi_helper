@@ -28,24 +28,28 @@ jobs:
     - name: Check and prepare project
       run: |
         ls -la
-        if [ -f "yisi_helper.zip" ]; then
+        if [ -d "yisi_helper" ]; then
+          echo "Project already extracted"
+        elif [ -f "yisi_helper.zip" ]; then
           echo "Extracting zip file..."
           unzip -o yisi_helper.zip
         fi
-        echo "Project structure:"
         ls -la yisi_helper/
-        ls -la yisi_helper/yisi_helper/ 2>/dev/null || echo "No nested folder"
     
     - name: Install dependencies
-      working-directory: ./yisi_helper/yisi_helper
-      run: flutter pub get
+      working-directory: ./yisi_helper
+      run: |
+        ls -la
+        flutter pub get
     
     - name: Build APK
-      working-directory: ./yisi_helper/yisi_helper
-      run: flutter build apk --release
+      working-directory: ./yisi_helper
+      run: |
+        ls -la
+        flutter build apk --release --verbose
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: yisi-helper-apk
-        path: yisi_helper/yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+        path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
