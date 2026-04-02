@@ -1,23 +1,4 @@
-name: Build APK
-
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Extract project from zip
+- name: Extract project from zip
       run: |
         echo "Current directory: $(pwd)"
         echo "Listing files:"
@@ -26,21 +7,49 @@ jobs:
         
         if [ -f "yisi_helper.zip" ]; then
           echo "Found yisi_helper.zip, extracting..."
-          # Install 7z for better Windows zip support
-          sudo apt-get update && sudo apt-get install -y p7zip-full
-          # Extract with 7z (handles Windows paths better)
-          7z x yisi_helper.zip -y
+          # Use Python to properly handle Windows-style paths in zip
+          python3 << 'PYEOF'
+        import zipfile
+        import os
+        
+        with zipfile.ZipFile('yisi_helper.zip', 'r') as zf:
+            for item in zf.namelist():
+                # Convert Windows backslashes to forward slashes
+                target_path = item.replace('\\', '/')
+                print(f"Extracting: {item} -> {target_path}")
+                
+                if item.endswith('/') or item.endswith('\\'):
+                    # Directory
+                    os.makedirs(target_path, exist_ok=True)
+                else:
+                    # File
+                    dir_path = os.path.dirname(target_path)
+                    if dir_path:
+                        os.makedirs(dir_path, exist_ok=True)
+                    with zf.open(item) as src, open(target_path, 'wb') as dst:
+                        dst.write(src.read())
+        print("Extraction complete")
+        PYEOF
+          
+          echo ""
           echo "Extracted contents:"
           ls -la
+          echo ""
           
+          # Check for the project directory
           if [ -d "yisi_helper" ]; then
             echo "Found yisi_helper directory"
+            PROJECT_DIR="yisi_helper"
+          elif [ -f "yisi_helper/pubspec.yaml" ]; then
+            echo "Found yisi_helper/pubspec.yaml"
             PROJECT_DIR="yisi_helper"
           elif [ -f "pubspec.yaml" ]; then
             echo "Found pubspec.yaml in root"
             PROJECT_DIR="."
           else
             echo "ERROR: Cannot find Flutter project after extraction"
+            echo "Listing all files:"
+            find . -name "pubspec.yaml" 2>/dev/null || echo "No pubspec.yaml found"
             exit 1
           fi
         elif [ -f "pubspec.yaml" ]; then
@@ -53,68 +62,3 @@ jobs:
         
         echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
         echo "Project directory set to: $PROJECT_DIR"
-    
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-    
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.24.0'
-        channel: 'stable'
-    
-    - name: Cache Flutter dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.pub-cache
-          ${{ github.workspace }}/.dart_tool
-        key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-flutter-
-    
-    - name: Verify Flutter setup
-      run: |
-        flutter doctor -v
-        flutter --version
-    
-    - name: Install dependencies
-      run: |
-        cd ${{ env.PROJECT_DIR }}
-        flutter pub get
-    
-    - name: Analyze code
-      run: |
-        cd ${{ env.PROJECT_DIR }}
-        flutter analyze || true
-    
-    - name: Build APK
-      run: |
-        cd ${{ env.PROJECT_DIR }}
-        flutter build apk --release
-    
-    - name: List build outputs
-      run: |
-        cd ${{ env.PROJECT_DIR }}
-        echo "Build outputs:"
-        find build -name "*.apk" -type f 2>/dev/null || echo "No APK found in build directory"
-        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "Directory not found"
-    
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: yisi-helper-apk
-        path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk
-        retention-days: 30
-        if-no-files-found: warn
-    
-    - name: Upload APK to Release
-      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
