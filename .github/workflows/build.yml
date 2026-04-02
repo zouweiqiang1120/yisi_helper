@@ -1,105 +1,35 @@
-name: Build APK
-
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-    
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.24.0'
-        channel: 'stable'
-    
-    - name: Cache Flutter dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.pub-cache
-          ${{ github.workspace }}/.dart_tool
-        key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-flutter-
-    
-    - name: Verify Flutter setup
-      run: |
-        flutter doctor -v
-        flutter --version
-    
-    - name: Find and enter project directory
+- name: Extract project from zip
       run: |
         echo "Current directory: $(pwd)"
         echo "Listing files:"
         ls -la
         echo ""
-        echo "Searching for pubspec.yaml..."
-        if [ -f "pubspec.yaml" ]; then
+        
+        # 检查是否有 zip 文件
+        if [ -f "yisi_helper.zip" ]; then
+          echo "Found yisi_helper.zip, extracting..."
+          unzip -q yisi_helper.zip
+          echo "Extracted contents:"
+          ls -la
+          
+          # 检查解压后的目录结构
+          if [ -d "yisi_helper" ]; then
+            echo "Found yisi_helper directory"
+            PROJECT_DIR="yisi_helper"
+          elif [ -f "pubspec.yaml" ]; then
+            echo "Found pubspec.yaml in root"
+            PROJECT_DIR="."
+          else
+            echo "ERROR: Cannot find Flutter project after extraction"
+            exit 1
+          fi
+        elif [ -f "pubspec.yaml" ]; then
           echo "Found pubspec.yaml in root directory"
           PROJECT_DIR="."
-        elif [ -f "yisi_helper/pubspec.yaml" ]; then
-          echo "Found pubspec.yaml in yisi_helper/"
-          PROJECT_DIR="yisi_helper"
         else
-          PROJECT_DIR=$(find . -name "pubspec.yaml" -type f | head -1 | xargs dirname)
-          echo "Found pubspec.yaml in: $PROJECT_DIR"
+          echo "ERROR: No yisi_helper.zip or pubspec.yaml found"
+          exit 1
         fi
+        
         echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
-        cd $PROJECT_DIR
-        echo "Now in directory: $(pwd)"
-        ls -la
-    
-    - name: Install dependencies
-      run: |
-        cd ${{ env.PROJECT_DIR }}
-        flutter pub get
-    
-    - name: Analyze code
-      run: |
-        cd ${{ env.PROJECT_DIR }}
-        flutter analyze || true
-    
-    - name: Build APK
-      run: |
-        cd ${{ env.PROJECT_DIR }}
-        flutter build apk --release
-    
-    - name: List build outputs
-      run: |
-        cd ${{ env.PROJECT_DIR }}
-        echo "Build outputs:"
-        find build -name "*.apk" -type f 2>/dev/null || echo "No APK found in build directory"
-        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "Directory not found"
-    
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: yisi-helper-apk
-        path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk
-        retention-days: 30
-        if-no-files-found: warn
-    
-    - name: Upload APK to Release
-      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        echo "Project directory set to: $PROJECT_DIR"
