@@ -14,119 +14,41 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
     
     - name: Extract project
       run: |
-        echo "Current directory: $(pwd)"
-        ls -la
-        
         if [ -f "yisi_helper.zip" ]; then
-          echo "Extracting yisi_helper.zip..."
           unzip -q yisi_helper.zip || true
-          PROJECT_DIR="yisi_helper"
+          echo "PROJECT_DIR=yisi_helper" >> $GITHUB_ENV
         elif [ -f "pubspec.yaml" ]; then
-          PROJECT_DIR="."
+          echo "PROJECT_DIR=." >> $GITHUB_ENV
         else
           echo "No project found"
           exit 1
         fi
-        
-        echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
-        echo "Project dir: $PROJECT_DIR"
     
-    - name: Fix Android config
+    - name: Create Android build files
       run: |
         cd ${{ env.PROJECT_DIR }}
-        rm -f android/app/build.gradle android/build.gradle android/settings.gradle
-        rm -f android/gradle.properties android/local.properties
+        rm -rf android
+        mkdir -p android/app/src/main/kotlin/com/example/yisi_helper
         
-        mkdir -p android/app
+        # Create android/build.gradle
+        printf '%s\n' 'buildscript {' '    ext.kotlin_version = "1.9.0"' '    repositories { google(); mavenCentral() }' '    dependencies {' '        classpath "com.android.tools.build:gradle:8.1.0"' '        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"' '    }' '}' 'allprojects { repositories { google(); mavenCentral() } }' 'rootProject.buildDir = "../build"' 'subprojects { project.buildDir = "${rootProject.buildDir}/${project.name}" }' 'tasks.register("clean", Delete) { delete rootProject.buildDir }' > android/build.gradle
         
-        cat > android/build.gradle << 'EOF'
-buildscript {
-    ext.kotlin_version = "1.9.0"
-    repositories { google(); mavenCentral() }
-    dependencies {
-        classpath "com.android.tools.build:gradle:8.1.0"
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
-allprojects { repositories { google(); mavenCentral() } }
-rootProject.buildDir = "../build"
-subprojects { project.buildDir = "${rootProject.buildDir}/${project.name}" }
-tasks.register("clean", Delete) { delete rootProject.buildDir }
-EOF
+        # Create android/settings.gradle
+        printf '%s\n' 'pluginManagement {' '    def flutterSdkPath = {' '        def properties = new Properties()' '        file("local.properties").withInputStream { properties.load(it) }' '        def flutterSdkPath = properties.getProperty("flutter.sdk")' '        assert flutterSdkPath != null, "flutter.sdk not set"' '        return flutterSdkPath' '    }()' '    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")' '    repositories { google(); mavenCentral(); gradlePluginPortal() }' '}' 'plugins {' '    id "dev.flutter.flutter-plugin-loader" version "1.0.0"' '    id "com.android.application" version "8.1.0" apply false' '    id "org.jetbrains.kotlin.android" version "1.9.0" apply false' '}' 'include ":app"' > android/settings.gradle
         
-        cat > android/settings.gradle << 'EOF'
-pluginManagement {
-    def flutterSdkPath = {
-        def properties = new Properties()
-        file("local.properties").withInputStream { properties.load(it) }
-        def flutterSdkPath = properties.getProperty("flutter.sdk")
-        assert flutterSdkPath != null, "flutter.sdk not set"
-        return flutterSdkPath
-    }()
-    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
-    repositories { google(); mavenCentral(); gradlePluginPortal() }
-}
-plugins {
-    id "dev.flutter.flutter-plugin-loader" version "1.0.0"
-    id "com.android.application" version "8.1.0" apply false
-    id "org.jetbrains.kotlin.android" version "1.9.0" apply false
-}
-include ":app"
-EOF
+        # Create android/app/build.gradle
+        printf '%s\n' 'plugins {' '    id "com.android.application"' '    id "kotlin-android"' '    id "dev.flutter.flutter-gradle-plugin"' '}' 'android {' '    namespace "com.example.yisi_helper"' '    compileSdkVersion flutter.compileSdkVersion' '    ndkVersion flutter.ndkVersion' '    compileOptions {' '        sourceCompatibility JavaVersion.VERSION_1_8' '        targetCompatibility JavaVersion.VERSION_1_8' '    }' '    kotlinOptions { jvmTarget = "1.8" }' '    sourceSets { main.java.srcDirs += "src/main/kotlin" }' '    defaultConfig {' '        applicationId "com.example.yisi_helper"' '        minSdkVersion 21' '        targetSdkVersion flutter.targetSdkVersion' '        versionCode 1' '        versionName "1.0"' '    }' '    buildTypes {' '        release {' '            signingConfig signingConfigs.debug' '            minifyEnabled true' '            shrinkResources true' '        }' '    }' '}' 'flutter { source "../.." }' 'dependencies { implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version" }' > android/app/build.gradle
         
-        cat > android/app/build.gradle << 'EOF'
-plugins {
-    id "com.android.application"
-    id "kotlin-android"
-    id "dev.flutter.flutter-gradle-plugin"
-}
-android {
-    namespace "com.example.yisi_helper"
-    compileSdkVersion flutter.compileSdkVersion
-    ndkVersion flutter.ndkVersion
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-    kotlinOptions { jvmTarget = "1.8" }
-    sourceSets { main.java.srcDirs += "src/main/kotlin" }
-    defaultConfig {
-        applicationId "com.example.yisi_helper"
-        minSdkVersion 21
-        targetSdkVersion flutter.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
-    }
-    buildTypes {
-        release {
-            signingConfig signingConfigs.debug
-            minifyEnabled true
-            shrinkResources true
-        }
-    }
-}
-flutter { source "../.." }
-dependencies { implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version" }
-EOF
+        # Create gradle.properties
+        printf '%s\n' 'org.gradle.jvmargs=-Xmx4G' 'android.useAndroidX=true' 'android.enableJetifier=true' > android/gradle.properties
         
-        cat > android/gradle.properties << 'EOF'
-org.gradle.jvmargs=-Xmx4G
-android.useAndroidX=true
-android.enableJetifier=true
-EOF
+        # Create local.properties
+        printf '%s\n' 'flutter.buildMode=release' 'flutter.versionName=1.0.0' 'flutter.versionCode=1' > android/local.properties
         
-        cat > android/local.properties << 'EOF'
-flutter.buildMode=release
-flutter.versionName=1.0.0
-flutter.versionCode=1
-EOF
-        
-        echo "Android config fixed"
+        echo "Android files created"
     
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -152,4 +74,3 @@ EOF
         name: yisi-helper-apk
         path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk
         retention-days: 30
-        if-no-files-found: warn
