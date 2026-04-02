@@ -17,211 +17,123 @@ jobs:
       with:
         fetch-depth: 0
     
-    - name: Extract project from zip
-    - name: Fix Android v2 embedding
-      run: |
-        echo "Fixing Android v2 embedding..."
-        cd ${{ env.PROJECT_DIR }}
-        
-        # Remove old Android config files
-        rm -f android/app/build.gradle
-        rm -f android/build.gradle
-        rm -f android/settings.gradle
-        rm -f android/gradle.properties
-        rm -f android/local.properties
-        
-        # Create new Android v2 embedding files
-        mkdir -p android/app
-        
-        # Create android/build.gradle
-        cat > android/build.gradle << 'GRADLEOF'
-        buildscript {
-            ext.kotlin_version = '1.9.0'
-            repositories {
-                google()
-                mavenCentral()
-            }
-            dependencies {
-                classpath 'com.android.tools.build:gradle:8.1.0'
-                classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-            }
-        }
-        allprojects {
-            repositories {
-                google()
-                mavenCentral()
-            }
-        }
-        rootProject.buildDir = '../build'
-        subprojects {
-            project.buildDir = "${rootProject.buildDir}/${project.name}"
-        }
-        subprojects {
-            project.evaluationDependsOn(':app')
-        }
-        tasks.register("clean", Delete) {
-            delete rootProject.buildDir
-        }
-        GRADLEOF
-        
-        # Create android/settings.gradle
-        cat > android/settings.gradle << 'SETTINGSOF'
-        pluginManagement {
-            def flutterSdkPath = {
-                def properties = new Properties()
-                file("local.properties").withInputStream { properties.load(it) }
-                def flutterSdkPath = properties.getProperty("flutter.sdk")
-                assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
-                return flutterSdkPath
-            }()
-            includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
-            repositories {
-                google()
-                mavenCentral()
-                gradlePluginPortal()
-            }
-        }
-        plugins {
-            id "dev.flutter.flutter-plugin-loader" version "1.0.0"
-            id "com.android.application" version "8.1.0" apply false
-            id "org.jetbrains.kotlin.android" version "1.9.0" apply false
-        }
-        include ":app"
-        SETTINGSOF
-        
-        # Create android/app/build.gradle
-        cat > android/app/build.gradle << 'APPCONFIGOF'
-        plugins {
-            id "com.android.application"
-            id "kotlin-android"
-            id "dev.flutter.flutter-gradle-plugin"
-        }
-        def localProperties = new Properties()
-        def localPropertiesFile = rootProject.file('local.properties')
-        if (localPropertiesFile.exists()) {
-            localPropertiesFile.withReader('UTF-8') { reader ->
-                localProperties.load(reader)
-            }
-        }
-        def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '1'
-        def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.0'
-        android {
-            namespace "com.example.yisi_helper"
-            compileSdkVersion flutter.compileSdkVersion
-            ndkVersion flutter.ndkVersion
-            compileOptions {
-                sourceCompatibility JavaVersion.VERSION_1_8
-                targetCompatibility JavaVersion.VERSION_1_8
-            }
-            kotlinOptions {
-                jvmTarget = '1.8'
-            }
-            sourceSets {
-                main.java.srcDirs += 'src/main/kotlin'
-            }
-            defaultConfig {
-                applicationId "com.example.yisi_helper"
-                minSdkVersion 21
-                targetSdkVersion flutter.targetSdkVersion
-                versionCode flutterVersionCode.toInteger()
-                versionName flutterVersionName
-            }
-            buildTypes {
-                release {
-                    signingConfig signingConfigs.debug
-                    minifyEnabled true
-                    shrinkResources true
-                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-                }
-            }
-        }
-        flutter {
-            source '../..'
-        }
-        dependencies {
-            implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-        }
-        APPCONFIGOF
-        
-        # Create android/gradle.properties
-        cat > android/gradle.properties << 'PROPSOF'
-        org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=2G -XX:+HeapDumpOnOutOfMemoryError
-        android.useAndroidX=true
-        android.enableJetifier=true
-        PROPSOF
-        
-        # Create android/local.properties
-        cat > android/local.properties << 'LOCALOF'
-        flutter.buildMode=release
-        flutter.versionName=1.0.0
-        flutter.versionCode=1
-        LOCALOF
-        
-        echo "Android v2 embedding files created successfully"
-        ls -la android/
+    - name: Extract and fix project
       run: |
         echo "Current directory: $(pwd)"
-        echo "Listing files:"
         ls -la
-        echo ""
         
+        # Extract zip
         if [ -f "yisi_helper.zip" ]; then
-          echo "Found yisi_helper.zip, extracting..."
-          # Use Python to properly handle Windows-style paths in zip
-          python3 << 'PYEOF'
-        import zipfile
-        import os
-        
-        with zipfile.ZipFile('yisi_helper.zip', 'r') as zf:
-            for item in zf.namelist():
-                # Convert Windows backslashes to forward slashes
-                target_path = item.replace('\\', '/')
-                print(f"Extracting: {item} -> {target_path}")
-                
-                if item.endswith('/') or item.endswith('\\'):
-                    # Directory
-                    os.makedirs(target_path, exist_ok=True)
-                else:
-                    # File
-                    dir_path = os.path.dirname(target_path)
-                    if dir_path:
-                        os.makedirs(dir_path, exist_ok=True)
-                    with zf.open(item) as src, open(target_path, 'wb') as dst:
-                        dst.write(src.read())
-        print("Extraction complete")
-        PYEOF
-          
-          echo ""
-          echo "Extracted contents:"
-          ls -la
-          echo ""
-          
-          # Check for the project directory
-          if [ -d "yisi_helper" ]; then
-            echo "Found yisi_helper directory"
-            PROJECT_DIR="yisi_helper"
-          elif [ -f "yisi_helper/pubspec.yaml" ]; then
-            echo "Found yisi_helper/pubspec.yaml"
-            PROJECT_DIR="yisi_helper"
-          elif [ -f "pubspec.yaml" ]; then
-            echo "Found pubspec.yaml in root"
-            PROJECT_DIR="."
-          else
-            echo "ERROR: Cannot find Flutter project after extraction"
-            echo "Listing all files:"
-            find . -name "pubspec.yaml" 2>/dev/null || echo "No pubspec.yaml found"
-            exit 1
-          fi
+          echo "Extracting yisi_helper.zip..."
+          python3 -c "
+import zipfile
+import os
+with zipfile.ZipFile('yisi_helper.zip', 'r') as zf:
+    for item in zf.namelist():
+        target = item.replace('\\\\', '/')
+        if target.endswith('/'):
+            os.makedirs(target, exist_ok=True)
+        else:
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            with zf.open(item) as src, open(target, 'wb') as dst:
+                dst.write(src.read())
+"
+          PROJECT_DIR="yisi_helper"
         elif [ -f "pubspec.yaml" ]; then
-          echo "Found pubspec.yaml in root directory"
           PROJECT_DIR="."
         else
-          echo "ERROR: No yisi_helper.zip or pubspec.yaml found"
+          echo "No project found"
           exit 1
         fi
         
         echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
-        echo "Project directory set to: $PROJECT_DIR"
+        echo "Project dir: $PROJECT_DIR"
+        
+        # Fix Android v2 embedding
+        cd $PROJECT_DIR
+        rm -f android/app/build.gradle android/build.gradle android/settings.gradle
+        rm -f android/gradle.properties android/local.properties
+        
+        # Create minimal android/build.gradle
+        mkdir -p android
+        echo 'buildscript {
+    ext.kotlin_version = "1.9.0"
+    repositories { google(); mavenCentral() }
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.1.0"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+allprojects { repositories { google(); mavenCentral() } }
+rootProject.buildDir = "../build"
+subprojects { project.buildDir = "${rootProject.buildDir}/${project.name}" }
+tasks.register("clean", Delete) { delete rootProject.buildDir }' > android/build.gradle
+        
+        # Create settings.gradle
+        echo 'pluginManagement {
+    def flutterSdkPath = {
+        def properties = new Properties()
+        file("local.properties").withInputStream { properties.load(it) }
+        def flutterSdkPath = properties.getProperty("flutter.sdk")
+        assert flutterSdkPath != null, "flutter.sdk not set"
+        return flutterSdkPath
+    }()
+    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
+    repositories { google(); mavenCentral(); gradlePluginPortal() }
+}
+plugins {
+    id "dev.flutter.flutter-plugin-loader" version "1.0.0"
+    id "com.android.application" version "8.1.0" apply false
+    id "org.jetbrains.kotlin.android" version "1.9.0" apply false
+}
+include ":app"' > android/settings.gradle
+        
+        # Create app/build.gradle
+        mkdir -p android/app
+        echo 'plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+android {
+    namespace "com.example.yisi_helper"
+    compileSdkVersion flutter.compileSdkVersion
+    ndkVersion flutter.ndkVersion
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions { jvmTarget = "1.8" }
+    sourceSets { main.java.srcDirs += "src/main/kotlin" }
+    defaultConfig {
+        applicationId "com.example.yisi_helper"
+        minSdkVersion 21
+        targetSdkVersion flutter.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.debug
+            minifyEnabled true
+            shrinkResources true
+        }
+    }
+}
+flutter { source "../.." }
+dependencies { implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version" }' > android/app/build.gradle
+        
+        # Create gradle.properties
+        echo 'org.gradle.jvmargs=-Xmx4G
+android.useAndroidX=true
+android.enableJetifier=true' > android/gradle.properties
+        
+        # Create local.properties
+        echo 'flutter.buildMode=release
+flutter.versionName=1.0.0
+flutter.versionCode=1' > android/local.properties
+        
+        echo "Android files created"
     
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -235,42 +147,11 @@ jobs:
         flutter-version: '3.24.0'
         channel: 'stable'
     
-    - name: Cache Flutter dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.pub-cache
-          ${{ github.workspace }}/.dart_tool
-        key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-flutter-
-    
-    - name: Verify Flutter setup
-      run: |
-        flutter doctor -v
-        flutter --version
-    
-    - name: Install dependencies
-      run: |
-        cd ${{ env.PROJECT_DIR }}
-        flutter pub get
-    
-    - name: Analyze code
-      run: |
-        cd ${{ env.PROJECT_DIR }}
-        flutter analyze || true
-    
     - name: Build APK
       run: |
         cd ${{ env.PROJECT_DIR }}
+        flutter pub get
         flutter build apk --release
-    
-    - name: List build outputs
-      run: |
-        cd ${{ env.PROJECT_DIR }}
-        echo "Build outputs:"
-        find build -name "*.apk" -type f 2>/dev/null || echo "No APK found in build directory"
-        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "Directory not found"
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
@@ -279,11 +160,3 @@ jobs:
         path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk
         retention-days: 30
         if-no-files-found: warn
-    
-    - name: Upload APK to Release
-      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
