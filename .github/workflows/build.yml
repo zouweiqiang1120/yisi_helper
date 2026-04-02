@@ -18,6 +18,147 @@ jobs:
         fetch-depth: 0
     
     - name: Extract project from zip
+    - name: Fix Android v2 embedding
+      run: |
+        echo "Fixing Android v2 embedding..."
+        cd ${{ env.PROJECT_DIR }}
+        
+        # Remove old Android config files
+        rm -f android/app/build.gradle
+        rm -f android/build.gradle
+        rm -f android/settings.gradle
+        rm -f android/gradle.properties
+        rm -f android/local.properties
+        
+        # Create new Android v2 embedding files
+        mkdir -p android/app
+        
+        # Create android/build.gradle
+        cat > android/build.gradle << 'GRADLEOF'
+        buildscript {
+            ext.kotlin_version = '1.9.0'
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.1.0'
+                classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+            }
+        }
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        rootProject.buildDir = '../build'
+        subprojects {
+            project.buildDir = "${rootProject.buildDir}/${project.name}"
+        }
+        subprojects {
+            project.evaluationDependsOn(':app')
+        }
+        tasks.register("clean", Delete) {
+            delete rootProject.buildDir
+        }
+        GRADLEOF
+        
+        # Create android/settings.gradle
+        cat > android/settings.gradle << 'SETTINGSOF'
+        pluginManagement {
+            def flutterSdkPath = {
+                def properties = new Properties()
+                file("local.properties").withInputStream { properties.load(it) }
+                def flutterSdkPath = properties.getProperty("flutter.sdk")
+                assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
+                return flutterSdkPath
+            }()
+            includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        plugins {
+            id "dev.flutter.flutter-plugin-loader" version "1.0.0"
+            id "com.android.application" version "8.1.0" apply false
+            id "org.jetbrains.kotlin.android" version "1.9.0" apply false
+        }
+        include ":app"
+        SETTINGSOF
+        
+        # Create android/app/build.gradle
+        cat > android/app/build.gradle << 'APPCONFIGOF'
+        plugins {
+            id "com.android.application"
+            id "kotlin-android"
+            id "dev.flutter.flutter-gradle-plugin"
+        }
+        def localProperties = new Properties()
+        def localPropertiesFile = rootProject.file('local.properties')
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.withReader('UTF-8') { reader ->
+                localProperties.load(reader)
+            }
+        }
+        def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '1'
+        def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.0'
+        android {
+            namespace "com.example.yisi_helper"
+            compileSdkVersion flutter.compileSdkVersion
+            ndkVersion flutter.ndkVersion
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_1_8
+                targetCompatibility JavaVersion.VERSION_1_8
+            }
+            kotlinOptions {
+                jvmTarget = '1.8'
+            }
+            sourceSets {
+                main.java.srcDirs += 'src/main/kotlin'
+            }
+            defaultConfig {
+                applicationId "com.example.yisi_helper"
+                minSdkVersion 21
+                targetSdkVersion flutter.targetSdkVersion
+                versionCode flutterVersionCode.toInteger()
+                versionName flutterVersionName
+            }
+            buildTypes {
+                release {
+                    signingConfig signingConfigs.debug
+                    minifyEnabled true
+                    shrinkResources true
+                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                }
+            }
+        }
+        flutter {
+            source '../..'
+        }
+        dependencies {
+            implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+        }
+        APPCONFIGOF
+        
+        # Create android/gradle.properties
+        cat > android/gradle.properties << 'PROPSOF'
+        org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=2G -XX:+HeapDumpOnOutOfMemoryError
+        android.useAndroidX=true
+        android.enableJetifier=true
+        PROPSOF
+        
+        # Create android/local.properties
+        cat > android/local.properties << 'LOCALOF'
+        flutter.buildMode=release
+        flutter.versionName=1.0.0
+        flutter.versionCode=1
+        LOCALOF
+        
+        echo "Android v2 embedding files created successfully"
+        ls -la android/
       run: |
         echo "Current directory: $(pwd)"
         echo "Listing files:"
