@@ -44,17 +44,46 @@ jobs:
         flutter doctor -v
         flutter --version
     
+    - name: Find and enter project directory
+      run: |
+        echo "Current directory: $(pwd)"
+        echo "Listing files:"
+        ls -la
+        echo ""
+        echo "Searching for pubspec.yaml..."
+        if [ -f "pubspec.yaml" ]; then
+          echo "Found pubspec.yaml in root directory"
+          PROJECT_DIR="."
+        elif [ -f "yisi_helper/pubspec.yaml" ]; then
+          echo "Found pubspec.yaml in yisi_helper/"
+          PROJECT_DIR="yisi_helper"
+        else
+          PROJECT_DIR=$(find . -name "pubspec.yaml" -type f | head -1 | xargs dirname)
+          echo "Found pubspec.yaml in: $PROJECT_DIR"
+        fi
+        echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+        cd $PROJECT_DIR
+        echo "Now in directory: $(pwd)"
+        ls -la
+    
     - name: Install dependencies
-      run: flutter pub get
+      run: |
+        cd ${{ env.PROJECT_DIR }}
+        flutter pub get
     
     - name: Analyze code
-      run: flutter analyze || true
+      run: |
+        cd ${{ env.PROJECT_DIR }}
+        flutter analyze || true
     
     - name: Build APK
-      run: flutter build apk --release
+      run: |
+        cd ${{ env.PROJECT_DIR }}
+        flutter build apk --release
     
     - name: List build outputs
       run: |
+        cd ${{ env.PROJECT_DIR }}
         echo "Build outputs:"
         find build -name "*.apk" -type f 2>/dev/null || echo "No APK found in build directory"
         ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "Directory not found"
@@ -63,7 +92,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: yisi-helper-apk
-        path: build/app/outputs/flutter-apk/app-release.apk
+        path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk
         retention-days: 30
         if-no-files-found: warn
     
@@ -71,6 +100,6 @@ jobs:
       if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v1
       with:
-        files: build/app/outputs/flutter-apk/app-release.apk
+        files: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-release.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
