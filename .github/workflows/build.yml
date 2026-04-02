@@ -23,16 +23,30 @@ jobs:
     
     - name: Extract and build
       run: |
+        # Extract zip
         unzip -q yisi_helper.zip || true
+        
+        # Find the actual project directory
         if [ -d "yisi_helper/yisi_helper" ]; then
-          mv yisi_helper/yisi_helper/* yisi_helper/
-          rmdir yisi_helper/yisi_helper
+          echo "Found nested directory, using yisi_helper/yisi_helper"
+          PROJECT_DIR="yisi_helper/yisi_helper"
+        elif [ -d "yisi_helper" ] && [ -f "yisi_helper/pubspec.yaml" ]; then
+          echo "Found yisi_helper directory"
+          PROJECT_DIR="yisi_helper"
+        else
+          echo "ERROR: Cannot find project"
+          ls -la
+          exit 1
         fi
-        cd yisi_helper
+        
+        echo "Project directory: $PROJECT_DIR"
+        
+        # Build
+        cd "$PROJECT_DIR"
         flutter pub get
         flutter build apk --release
     
     - uses: actions/upload-artifact@v4
       with:
         name: yisi-helper-apk
-        path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+        path: yisi_helper/yisi_helper/build/app/outputs/flutter-apk/app-release.apk
