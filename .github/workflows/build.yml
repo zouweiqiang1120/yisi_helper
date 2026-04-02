@@ -1,4 +1,76 @@
-cd yisi_helper
-git add .github/workflows/build.yml
-git commit -m "Fix GitHub Actions workflow"
-git push
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+    
+    - name: Cache Flutter dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.pub-cache
+          ${{ github.workspace }}/.dart_tool
+        key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-flutter-
+    
+    - name: Verify Flutter setup
+      run: |
+        flutter doctor -v
+        flutter --version
+    
+    - name: Install dependencies
+      run: flutter pub get
+    
+    - name: Analyze code
+      run: flutter analyze || true
+    
+    - name: Build APK
+      run: flutter build apk --release
+    
+    - name: List build outputs
+      run: |
+        echo "Build outputs:"
+        find build -name "*.apk" -type f 2>/dev/null || echo "No APK found in build directory"
+        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "Directory not found"
+    
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: yisi-helper-apk
+        path: build/app/outputs/flutter-apk/app-release.apk
+        retention-days: 30
+        if-no-files-found: warn
+    
+    - name: Upload APK to Release
+      if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: build/app/outputs/flutter-apk/app-release.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
