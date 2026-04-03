@@ -21,7 +21,7 @@ jobs:
         flutter-version: '3.16.0'
         channel: 'stable'
     
-    - name: Extract and build
+    - name: Extract and fix permissions
       run: |
         # Extract zip
         unzip -q yisi_helper.zip || true
@@ -41,7 +41,21 @@ jobs:
         
         echo "Project directory: $PROJECT_DIR"
         
-        # Build
+        # Fix permissions for Android build
+        sudo chown -R $(whoami) "$PROJECT_DIR"
+        sudo chmod -R 755 "$PROJECT_DIR"
+        
+        echo "Permissions fixed"
+    
+    - name: Build APK
+      run: |
+        # Determine project directory again
+        if [ -d "yisi_helper/yisi_helper" ]; then
+          PROJECT_DIR="yisi_helper/yisi_helper"
+        else
+          PROJECT_DIR="yisi_helper"
+        fi
+        
         cd "$PROJECT_DIR"
         flutter pub get
         flutter build apk --release
