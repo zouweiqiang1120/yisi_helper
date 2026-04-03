@@ -1,0 +1,23 @@
+搜索关键词: Python tutorial
+搜索时间: 2026-03-16 14:29:52
+======================================================================
+
+百度 搜索结果:
+----------------------------------------------------------------------
+  [1] python学习-零基础入门到精通
+  [2] Python 基础教程 | 菜鸟教程
+  [3] 欢迎来到编程软件-中文网站-下载入口
+  [4] The Python Tutorial — Python 3.14.3 documentation
+  [5] Python Tutorial
+
+Bing 搜索结果:
+----------------------------------------------------------------------
+  [1] The Python Tutorial — Python 3.14.3 documentation
+  [2] 3.14.3 Documentation - Python
+  [3] 3. An Informal Introduction to Python
+  [4] 1. Whetting Your Appetite — Python 3.14.3 documentation
+  [5] 4. More Control Flow Tools — Python 3.14.3 documentation
+
+DuckDuckGo 搜索结果:
+----------------------------------------------------------------------
+  DuckDuckGo搜索失败: <urlopen error timed out>

@@ -1,0 +1,31 @@
+{
+  "current": {
+    "code": "301117",
+    "name": "佳缘科技",
+    "price": 47.64,
+    "change_pct": -9.17,
+    "main_inflow": -78830000,
+    "main_control": 0.153
+  },
+  "history": [
+    {
+      "time": "11:23",
+      "code": "301117",
+      "name": "佳缘科技",
+      "price": 47.3,
+      "change_pct": -9.82,
+      "main_inflow": -78830000,
+      "main_control": 0.153
+    },
+    {
+      "time": "14:27",
+      "code": "301117",
+      "name": "佳缘科技",
+      "price": 47.64,
+      "change_pct": -9.17,
+      "main_inflow": -78830000,
+      "main_control": 0.153
+    }
+  ],
+  "generated_at": "2026-03-16T14:38:24.149586"
+}

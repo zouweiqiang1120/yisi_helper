@@ -1,0 +1,26 @@
+[
+  {
+    "content": "# LLDPE装置常见的产能规模表述单位是（）。",
+    "options": [
+      "",
+      "",
+      "",
+      ""
+    ],
+    "answer": "A",
+    "type": "single",
+    "category": "LLDPE装置"
+  },
+  {
+    "content": "# 对;",
+    "options": [
+      "对",
+      "错",
+      "",
+      ""
+    ],
+    "answer": "错",
+    "type": "judge",
+    "category": "LLDPE装置"
+  }
+]

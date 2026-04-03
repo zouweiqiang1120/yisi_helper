@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Agent分析报告</title>
+    <style>
+        body { font-family: Microsoft YaHei; margin: 40px; }
+        h1 { color: #333; }
+        .stock { border: 1px solid #ddd; margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .alert { color: #d9534f; }
+        .score { font-size: 24px; font-weight: bold; }
+        .recommendation { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .sell { background: #f2dede; color: #a94442; }
+        .hold { background: #fcf8e3; color: #8a6d3b; }
+        .buy { background: #dff0d8; color: #3c763d; }
+    </style>
+</head>
+<body>
+    <h1>Agent 股票分析报告</h1>
+    <p>生成时间: 2026-03-16 14:40:59</p>
+    <p>Agent版本: 1.0</p>
+    
+    <h2>分析结果</h2>
+
+    <div class="stock">
+        <h3>佳缘科技 (301117)</h3>
+        <p>价格: 47.63 | 涨跌: -9.19%</p>
+        <p>主力: -7883万 | 控盘: 0.153</p>
+        <p class="score">评分: -10</p>
+        <div class="recommendation sell">建议: 卖出</div>
+        <ul>
+            <li class='alert'>价格大幅波动: -9.19%</li>
+            <li class='alert'>主力大幅流出: -7883万</li>
+            <li class='alert'>筹码分散，控盘度: 0.153</li>
+        </ul>
+    </div>
+
+    <div class="stock">
+        <h3>招标股份 (301136)</h3>
+        <p>价格: 16.46 | 涨跌: +1.17%</p>
+        <p>主力: +8362万 | 控盘: 0.011</p>
+        <p class="score">评分: 60</p>
+        <div class="recommendation buy">建议: 关注</div>
+        <ul>
+            <li class='alert'>主力大幅流入: 8362万</li>
+            <li class='alert'>筹码分散，控盘度: 0.011</li>
+        </ul>
+    </div>
+
+</body>
+</html>
