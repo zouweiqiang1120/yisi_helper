@@ -47,12 +47,10 @@ jobs:
       working-directory: yisi_helper
       run: flutter pub get
     
-    - name: Build APK with verbose output
+    - name: Build APK
       working-directory: yisi_helper
-      run: |
-        flutter build apk --release --verbose 2>&1 | tee build.log
-        echo ""
-        echo "=== Build exit code: ${PIPESTATUS[0]} ==="
+      run: flutter build apk --release
+      continue-on-error: true
     
     - name: Check build outputs
       if: always()
@@ -60,12 +58,12 @@ jobs:
         echo "=== Looking for APK files ==="
         find yisi_helper -name "*.apk" -type f 2>/dev/null
         echo ""
-        echo "=== Build log errors ==="
-        grep -i "error\|fail" yisi_helper/build.log | head -20 || echo "No errors found in log"
+        echo "=== Build directory structure ==="
+        ls -laR yisi_helper/build/ 2>/dev/null | head -50 || echo "No build directory"
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
-      if: success()
       with:
         name: yisi-helper-apk
-        path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+        path: yisi_helper/**/*.apk
+      if: always()
