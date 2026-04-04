@@ -44,13 +44,17 @@ jobs:
       working-directory: yisi_helper
       run: flutter pub get
     
-    - name: Build APK
+    - name: Build APK with verbose output
       working-directory: yisi_helper
       run: |
-        flutter build apk --release 2>&1
-        echo "Build exit code: $?"
+        set -x  # 显示执行的每条命令
+        flutter build apk --release --verbose 2>&1 | tee build.log
+        BUILD_EXIT_CODE=${PIPESTATUS[0]}
+        echo "Build exit code: $BUILD_EXIT_CODE"
+        exit $BUILD_EXIT_CODE
     
     - name: Check build outputs
+      if: always()
       run: |
         echo "=== Current directory ==="
         pwd
@@ -64,19 +68,8 @@ jobs:
         echo "=== Looking for APK files ==="
         find yisi_helper -name "*.apk" -type f 2>/dev/null
         echo ""
-        echo "=== If build exists, show structure ==="
-        if [ -d "yisi_helper/build" ]; then
-          echo "Build directory found!"
-          ls -la yisi_helper/build/
-          if [ -d "yisi_helper/build/app" ]; then
-            ls -la yisi_helper/build/app/
-            if [ -d "yisi_helper/build/app/outputs" ]; then
-              ls -laR yisi_helper/build/app/outputs/
-            fi
-          fi
-        else
-          echo "No build directory found"
-        fi
+        echo "=== Build log tail ==="
+        tail -100 yisi_helper/build.log 2>/dev/null || echo "No build.log found"
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
