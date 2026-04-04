@@ -44,38 +44,43 @@ jobs:
       working-directory: yisi_helper
       run: flutter pub get
     
-    - name: Build APK with verbose output
+    - name: Build APK
       working-directory: yisi_helper
       run: |
-        flutter build apk --release --verbose 2>&1 | tee build.log
-        echo ""
-        echo "=== Build Log Analysis ==="
-        grep -i "error\|fail\|success\|apk" build.log || true
-      continue-on-error: true
+        flutter build apk --release 2>&1
+        echo "Build exit code: $?"
     
-    - name: Check all build outputs
+    - name: Check build outputs
       run: |
-        echo "=== Current Directory ==="
+        echo "=== Current directory ==="
         pwd
-        ls -la
         echo ""
-        echo "=== yisi_helper Directory ==="
+        echo "=== yisi_helper directory ==="
         ls -la yisi_helper/
         echo ""
-        echo "=== Searching for APK files ==="
-        find yisi_helper -name "*.apk" -type f 2>/dev/null || echo "No APK found in yisi_helper"
+        echo "=== Looking for build directory ==="
+        find yisi_helper -type d -name "build" 2>/dev/null | head -5
         echo ""
-        echo "=== Searching for build directory ==="
-        find yisi_helper -type d -name "build" 2>/dev/null || echo "No build directory found"
+        echo "=== Looking for APK files ==="
+        find yisi_helper -name "*.apk" -type f 2>/dev/null
         echo ""
-        echo "=== Full directory tree (limited) ==="
-        tree -L 3 yisi_helper/ 2>/dev/null || find yisi_helper -maxdepth 3 -type d 2>/dev/null
+        echo "=== If build exists, show structure ==="
+        if [ -d "yisi_helper/build" ]; then
+          echo "Build directory found!"
+          ls -la yisi_helper/build/
+          if [ -d "yisi_helper/build/app" ]; then
+            ls -la yisi_helper/build/app/
+            if [ -d "yisi_helper/build/app/outputs" ]; then
+              ls -laR yisi_helper/build/app/outputs/
+            fi
+          fi
+        else
+          echo "No build directory found"
+        fi
     
-    - name: Upload any APK found
+    - name: Upload APK
       uses: actions/upload-artifact@v4
+      if: success()
       with:
         name: yisi-helper-apk
-        path: |
-          yisi_helper/**/*.apk
-          yisi_helper/build/app/outputs/**/*.apk
-      if: always()
+        path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
