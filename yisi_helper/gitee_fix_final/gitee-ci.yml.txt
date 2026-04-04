@@ -1,0 +1,21 @@
+﻿stages:
+  - build
+
+variables:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
+build_apk:
+  stage: build
+  image: cirrusci/flutter:3.16.0
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq unzip
+  script:
+    - cd yisi_helper
+    - flutter config --no-analytics
+    - flutter pub get
+    - flutter build apk --release
+  artifacts:
+    paths:
+      - yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+    expire_in: 1 week

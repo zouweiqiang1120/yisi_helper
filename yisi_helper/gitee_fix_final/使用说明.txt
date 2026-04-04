@@ -1,0 +1,43 @@
+﻿Gitee 修复文件使用说明
+========================
+
+文件说明：
+-----------
+1. android_build.gradle.txt → 用于替换 android/build.gradle
+2. gitee-ci.yml.txt → 用于创建 .gitee-ci.yml
+
+操作步骤：
+-----------
+
+步骤1：修复 android/build.gradle
+1. 打开 Gitee 仓库：https://gitee.com/周伟强/yisi_helper
+2. 点击进入 yisi_helper → android 文件夹
+3. 点击 build.gradle 文件
+4. 点击"编辑"按钮（铅笔图标）
+5. 删除原来的所有内容
+6. 打开 android_build.gradle.txt，复制全部内容
+7. 粘贴到 Gitee 的编辑框
+8. 填写提交信息：修复 android/build.gradle
+9. 点击"提交"
+
+步骤2：创建 .gitee-ci.yml
+1. 在仓库根目录点击"+" → "新建文件"
+2. 文件名填写：.gitee-ci.yml
+3. 打开 gitee-ci.yml.txt，复制全部内容
+4. 粘贴到 Gitee 的编辑框
+5. 填写提交信息：添加 Gitee CI 构建配置
+6. 点击"提交"
+
+步骤3：运行构建
+1. 点击顶部菜单"流水线"
+2. 等待自动触发，或点击"运行流水线"
+3. 查看构建进度，等待 APK 生成
+
+注意事项：
+-----------
+- 确保文件名完全正确（包括点号）
+- 不要漏掉任何字符
+- 提交后等待 1-2 分钟让流水线启动
+
+构建成功后，APK 文件会在：
+流水线 → 构建任务 →  artifacts 中下载
