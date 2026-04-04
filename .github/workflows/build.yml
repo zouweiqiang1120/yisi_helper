@@ -30,34 +30,28 @@ jobs:
         echo "=== Looking for pubspec.yaml ==="
         find . -name "pubspec.yaml" -type f 2>/dev/null
         echo ""
-        echo "=== Check yisi_helper directory ==="
+        echo "=== Check if pubspec.yaml exists in current dir ==="
+        if [ -f "pubspec.yaml" ]; then
+          echo "pubspec.yaml found in current directory"
+          cat pubspec.yaml | head -20
+        else
+          echo "No pubspec.yaml in current directory"
+        fi
+        echo ""
+        echo "=== Check for yisi_helper directory ==="
         if [ -d "yisi_helper" ]; then
           echo "yisi_helper directory exists:"
           ls -la yisi_helper/
-          if [ -f "yisi_helper/pubspec.yaml" ]; then
-            echo "pubspec.yaml found in yisi_helper/"
-          fi
         else
           echo "No yisi_helper directory"
         fi
     
     - name: Fix permissions
-      run: |
-        if [ -d "yisi_helper" ]; then
-          sudo chown -R $(whoami) yisi_helper
-          sudo chmod -R 755 yisi_helper
-        else
-          sudo chown -R $(whoami) .
-          sudo chmod -R 755 .
-        fi
+      run: sudo chown -R $(whoami) . && sudo chmod -R 755 .
     
     - name: Create local.properties
       run: |
-        if [ -d "yisi_helper/android" ]; then
-          echo "flutter.sdk=${FLUTTER_ROOT}" > yisi_helper/android/local.properties
-          echo "sdk.dir=/usr/local/lib/android/sdk" >> yisi_helper/android/local.properties
-          cat yisi_helper/android/local.properties
-        elif [ -d "android" ]; then
+        if [ -f "pubspec.yaml" ]; then
           echo "flutter.sdk=${FLUTTER_ROOT}" > android/local.properties
           echo "sdk.dir=/usr/local/lib/android/sdk" >> android/local.properties
           cat android/local.properties
@@ -65,18 +59,20 @@ jobs:
     
     - name: Get dependencies
       run: |
-        if [ -f "yisi_helper/pubspec.yaml" ]; then
-          cd yisi_helper && flutter pub get
-        else
+        if [ -f "pubspec.yaml" ]; then
           flutter pub get
+        else
+          echo "No pubspec.yaml found!"
+          exit 1
         fi
     
     - name: Build APK
       run: |
-        if [ -f "yisi_helper/pubspec.yaml" ]; then
-          cd yisi_helper && flutter build apk --release
-        else
+        if [ -f "pubspec.yaml" ]; then
           flutter build apk --release
+        else
+          echo "No pubspec.yaml found!"
+          exit 1
         fi
     
     - name: Check build outputs
@@ -90,6 +86,4 @@ jobs:
       if: success()
       with:
         name: yisi-helper-apk
-        path: |
-          yisi_helper/build/app/outputs/flutter-apk/app-release.apk
-          build/app/outputs/flutter-apk/app-release.apk
+        path: build/app/outputs/flutter-apk/app-release.apk
