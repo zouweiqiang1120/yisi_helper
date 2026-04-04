@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: yisi_helper
     steps:
     - uses: actions/checkout@v4
     
@@ -21,46 +24,18 @@ jobs:
         flutter-version: '3.16.0'
         channel: 'stable'
     
-    - name: Extract and fix permissions
+    - name: Fix permissions
       run: |
-        # Extract zip
-        unzip -q yisi_helper.zip || true
-        
-        # Find the actual project directory
-        if [ -d "yisi_helper/yisi_helper" ]; then
-          echo "Found nested directory, using yisi_helper/yisi_helper"
-          PROJECT_DIR="yisi_helper/yisi_helper"
-        elif [ -d "yisi_helper" ] && [ -f "yisi_helper/pubspec.yaml" ]; then
-          echo "Found yisi_helper directory"
-          PROJECT_DIR="yisi_helper"
-        else
-          echo "ERROR: Cannot find project"
-          ls -la
-          exit 1
-        fi
-        
-        echo "Project directory: $PROJECT_DIR"
-        
-        # Fix permissions for Android build
-        sudo chown -R $(whoami) "$PROJECT_DIR"
-        sudo chmod -R 755 "$PROJECT_DIR"
-        
-        echo "Permissions fixed"
+        sudo chown -R $(whoami) .
+        sudo chmod -R 755 .
+    
+    - name: Get dependencies
+      run: flutter pub get
     
     - name: Build APK
-      run: |
-        # Determine project directory again
-        if [ -d "yisi_helper/yisi_helper" ]; then
-          PROJECT_DIR="yisi_helper/yisi_helper"
-        else
-          PROJECT_DIR="yisi_helper"
-        fi
-        
-        cd "$PROJECT_DIR"
-        flutter pub get
-        flutter build apk --release
+      run: flutter build apk --release
     
     - uses: actions/upload-artifact@v4
       with:
         name: yisi-helper-apk
-        path: yisi_helper/yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+        path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
