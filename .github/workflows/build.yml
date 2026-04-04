@@ -21,23 +21,26 @@ jobs:
         flutter-version: '3.16.0'
         channel: 'stable'
     
-    - name: Check directory structure
+    - name: Check and fix directory structure
       run: |
         echo "=== Current directory ==="
         pwd
         ls -la
         echo ""
-        echo "=== Looking for yisi_helper ==="
-        find . -maxdepth 3 -type d -name "yisi_helper" 2>/dev/null
-        echo ""
-        echo "=== Checking for nested yisi_helper ==="
+        echo "=== Check if we have nested yisi_helper ==="
         if [ -d "yisi_helper/yisi_helper" ]; then
-          echo "NESTED DIRECTORY FOUND! Moving to correct location..."
-          mv yisi_helper yisi_helper_backup
-          mv yisi_helper_backup/yisi_helper .
-          rm -rf yisi_helper_backup
-          ls -la
+          echo "NESTED DIRECTORY FOUND!"
+          echo "Moving inner yisi_helper to current directory..."
+          mv yisi_helper/yisi_helper yisi_helper_temp
+          rm -rf yisi_helper
+          mv yisi_helper_temp yisi_helper
+          echo "Directory structure fixed!"
+        else
+          echo "No nested directory found"
         fi
+        echo ""
+        echo "=== Final directory structure ==="
+        ls -la
         ls -la yisi_helper/
     
     - name: Fix permissions
