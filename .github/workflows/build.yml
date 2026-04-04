@@ -21,62 +21,75 @@ jobs:
         flutter-version: '3.16.0'
         channel: 'stable'
     
-    - name: Check directory structure
+    - name: Find Flutter project
       run: |
         echo "=== Current directory ==="
         pwd
         ls -la
         echo ""
-        echo "=== Check for yisi_helper directory ==="
+        echo "=== Looking for pubspec.yaml ==="
+        find . -name "pubspec.yaml" -type f 2>/dev/null
+        echo ""
+        echo "=== Check yisi_helper directory ==="
         if [ -d "yisi_helper" ]; then
-          echo "yisi_helper directory exists"
+          echo "yisi_helper directory exists:"
           ls -la yisi_helper/
+          if [ -f "yisi_helper/pubspec.yaml" ]; then
+            echo "pubspec.yaml found in yisi_helper/"
+          fi
         else
-          echo "No yisi_helper directory found - using current directory"
-        fi
-    
-    - name: Determine working directory
-      id: workdir
-      run: |
-        if [ -d "yisi_helper" ] && [ -f "yisi_helper/pubspec.yaml" ]; then
-          echo "dir=yisi_helper" >> $GITHUB_OUTPUT
-          echo "Using yisi_helper as working directory"
-        elif [ -f "pubspec.yaml" ]; then
-          echo "dir=." >> $GITHUB_OUTPUT
-          echo "Using current directory as working directory"
-        else
-          echo "Error: Cannot find pubspec.yaml"
-          exit 1
+          echo "No yisi_helper directory"
         fi
     
     - name: Fix permissions
-      run: sudo chown -R $(whoami) . && sudo chmod -R 755 .
+      run: |
+        if [ -d "yisi_helper" ]; then
+          sudo chown -R $(whoami) yisi_helper
+          sudo chmod -R 755 yisi_helper
+        else
+          sudo chown -R $(whoami) .
+          sudo chmod -R 755 .
+        fi
     
     - name: Create local.properties
       run: |
-        mkdir -p android
-        echo "flutter.sdk=${FLUTTER_ROOT}" > android/local.properties
-        echo "sdk.dir=/usr/local/lib/android/sdk" >> android/local.properties
-        cat android/local.properties
+        if [ -d "yisi_helper/android" ]; then
+          echo "flutter.sdk=${FLUTTER_ROOT}" > yisi_helper/android/local.properties
+          echo "sdk.dir=/usr/local/lib/android/sdk" >> yisi_helper/android/local.properties
+          cat yisi_helper/android/local.properties
+        elif [ -d "android" ]; then
+          echo "flutter.sdk=${FLUTTER_ROOT}" > android/local.properties
+          echo "sdk.dir=/usr/local/lib/android/sdk" >> android/local.properties
+          cat android/local.properties
+        fi
     
     - name: Get dependencies
-      run: flutter pub get
+      run: |
+        if [ -f "yisi_helper/pubspec.yaml" ]; then
+          cd yisi_helper && flutter pub get
+        else
+          flutter pub get
+        fi
     
     - name: Build APK
-      run: flutter build apk --release
+      run: |
+        if [ -f "yisi_helper/pubspec.yaml" ]; then
+          cd yisi_helper && flutter build apk --release
+        else
+          flutter build apk --release
+        fi
     
     - name: Check build outputs
       if: always()
       run: |
         echo "=== Looking for APK files ==="
         find . -name "*.apk" -type f 2>/dev/null
-        echo ""
-        echo "=== Build directory ==="
-        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "No APK directory"
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       if: success()
       with:
         name: yisi-helper-apk
-        path: build/app/outputs/flutter-apk/app-release.apk
+        path: |
+          yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+          build/app/outputs/flutter-apk/app-release.apk
