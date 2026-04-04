@@ -31,11 +31,14 @@ jobs:
         find . -maxdepth 3 -type d -name "yisi_helper" 2>/dev/null
         echo ""
         echo "=== Checking for nested yisi_helper ==="
-        ls -la yisi_helper/ 2>/dev/null || echo "No yisi_helper directory"
         if [ -d "yisi_helper/yisi_helper" ]; then
-          echo "NESTED DIRECTORY FOUND!"
-          ls -la yisi_helper/yisi_helper/
+          echo "NESTED DIRECTORY FOUND! Moving to correct location..."
+          mv yisi_helper yisi_helper_backup
+          mv yisi_helper_backup/yisi_helper .
+          rm -rf yisi_helper_backup
+          ls -la
         fi
+        ls -la yisi_helper/
     
     - name: Fix permissions
       working-directory: yisi_helper
@@ -54,29 +57,18 @@ jobs:
       working-directory: yisi_helper
       run: flutter pub get
     
-    - name: Build APK with verbose output
+    - name: Build APK
       working-directory: yisi_helper
-      run: |
-        set -x  # 显示执行的每条命令
-        flutter build apk --release --verbose 2>&1 | tee build.log
-        BUILD_EXIT_CODE=${PIPESTATUS[0]}
-        echo "Build exit code: $BUILD_EXIT_CODE"
-        exit $BUILD_EXIT_CODE
+      run: flutter build apk --release
     
     - name: Check build outputs
       if: always()
       run: |
-        echo "=== Current directory ==="
-        pwd
-        echo ""
-        echo "=== Looking for build directory ==="
-        find yisi_helper -type d -name "build" 2>/dev/null | head -5
-        echo ""
         echo "=== Looking for APK files ==="
         find yisi_helper -name "*.apk" -type f 2>/dev/null
         echo ""
-        echo "=== Build log tail ==="
-        tail -100 yisi_helper/build.log 2>/dev/null || echo "No build.log found"
+        echo "=== Build directory ==="
+        ls -la yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "No APK directory"
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
