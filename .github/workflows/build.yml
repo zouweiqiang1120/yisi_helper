@@ -44,21 +44,6 @@ jobs:
       working-directory: yisi_helper
       run: flutter pub get
     
-    - name: Check Flutter project
-      working-directory: yisi_helper
-      run: |
-        echo "=== Flutter Doctor ==="
-        flutter doctor -v || true
-        echo ""
-        echo "=== Project Structure ==="
-        ls -la
-        echo ""
-        echo "=== Android Directory ==="
-        ls -la android/
-        echo ""
-        echo "=== Android App Directory ==="
-        ls -la android/app/
-    
     - name: Build APK with verbose output
       working-directory: yisi_helper
       run: |
@@ -68,32 +53,29 @@ jobs:
         grep -i "error\|fail\|success\|apk" build.log || true
       continue-on-error: true
     
-    - name: Find and check APK
+    - name: Check all build outputs
       run: |
-        echo "=== Searching for APK files ==="
-        find . -name "*.apk" -type f 2>/dev/null
+        echo "=== Current Directory ==="
+        pwd
+        ls -la
         echo ""
-        echo "=== Build Directory Structure ==="
-        if [ -d "yisi_helper/build" ]; then
-          ls -laR yisi_helper/build/
-        else
-          echo "No build directory found"
-        fi
+        echo "=== yisi_helper Directory ==="
+        ls -la yisi_helper/
+        echo ""
+        echo "=== Searching for APK files ==="
+        find yisi_helper -name "*.apk" -type f 2>/dev/null || echo "No APK found in yisi_helper"
+        echo ""
+        echo "=== Searching for build directory ==="
+        find yisi_helper -type d -name "build" 2>/dev/null || echo "No build directory found"
+        echo ""
+        echo "=== Full directory tree (limited) ==="
+        tree -L 3 yisi_helper/ 2>/dev/null || find yisi_helper -maxdepth 3 -type d 2>/dev/null
     
-    - name: Copy APK to known location
-      run: |
-        APK_PATH=$(find yisi_helper -name "*.apk" -type f | head -1)
-        if [ -n "$APK_PATH" ]; then
-          echo "Found APK at: $APK_PATH"
-          mkdir -p yisi_helper/build/app/outputs/flutter-apk/
-          cp "$APK_PATH" yisi_helper/build/app/outputs/flutter-apk/app-release.apk
-          echo "APK copied successfully"
-        else
-          echo "No APK found!"
-          exit 1
-        fi
-    
-    - uses: actions/upload-artifact@v4
+    - name: Upload any APK found
+      uses: actions/upload-artifact@v4
       with:
         name: yisi-helper-apk
-        path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+        path: |
+          yisi_helper/**/*.apk
+          yisi_helper/build/app/outputs/**/*.apk
+      if: always()
