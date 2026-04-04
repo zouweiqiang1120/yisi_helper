@@ -24,7 +24,7 @@ jobs:
     - name: Check Flutter installation
       run: |
         echo "Flutter path: $(which flutter)"
-        echo "Flutter version: $(flutter --version)"
+        flutter --version
         echo "FLUTTER_ROOT: $FLUTTER_ROOT"
     
     - name: Fix permissions
@@ -44,27 +44,41 @@ jobs:
       working-directory: yisi_helper
       run: flutter pub get
     
-    - name: Build APK
+    - name: Check Flutter project
       working-directory: yisi_helper
-      run: flutter build apk --release
+      run: |
+        echo "=== Flutter Doctor ==="
+        flutter doctor -v || true
+        echo ""
+        echo "=== Project Structure ==="
+        ls -la
+        echo ""
+        echo "=== Android Directory ==="
+        ls -la android/
+        echo ""
+        echo "=== Android App Directory ==="
+        ls -la android/app/
+    
+    - name: Build APK with verbose output
+      working-directory: yisi_helper
+      run: |
+        flutter build apk --release --verbose 2>&1 | tee build.log
+        echo ""
+        echo "=== Build Log Analysis ==="
+        grep -i "error\|fail\|success\|apk" build.log || true
       continue-on-error: true
-      id: build_apk
     
     - name: Find and check APK
       run: |
-        echo "Searching for APK files..."
+        echo "=== Searching for APK files ==="
         find . -name "*.apk" -type f 2>/dev/null
         echo ""
-        echo "Checking build directory structure..."
-        ls -la yisi_helper/build/ 2>/dev/null || echo "No build directory"
-        echo ""
-        ls -la yisi_helper/build/app/ 2>/dev/null || echo "No app directory"
-        echo ""
-        ls -la yisi_helper/build/app/outputs/ 2>/dev/null || echo "No outputs directory"
-        echo ""
-        ls -la yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "No flutter-apk directory"
-        echo ""
-        ls -la yisi_helper/build/app/outputs/apk/ 2>/dev/null || echo "No apk directory"
+        echo "=== Build Directory Structure ==="
+        if [ -d "yisi_helper/build" ]; then
+          ls -laR yisi_helper/build/
+        else
+          echo "No build directory found"
+        fi
     
     - name: Copy APK to known location
       run: |

@@ -51,9 +51,9 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.debug
-            minifyEnabled true
-            shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // 暂时禁用代码压缩以简化构建
+            minifyEnabled false
+            shrinkResources false
         }
     }
 }
