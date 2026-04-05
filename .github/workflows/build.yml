@@ -21,18 +21,6 @@ jobs:
         flutter-version: '3.16.9'
         channel: 'stable'
     
-    - name: Find Flutter project
-      run: |
-        echo "=== Current directory ==="
-        pwd
-        ls -la
-        echo ""
-        echo "=== Looking for pubspec.yaml ==="
-        find . -name "pubspec.yaml" -type f 2>/dev/null
-        echo ""
-        echo "=== Check yisi_helper directory ==="
-        ls -la yisi_helper/ 2>/dev/null || echo "No yisi_helper directory"
-    
     - name: Get dependencies
       working-directory: yisi_helper
       run: flutter pub get
