@@ -27,9 +27,12 @@ jobs:
         pwd
         ls -la
         echo ""
+        echo "Removing existing android directory..."
+        rm -rf android
+        echo ""
         echo "Moving yisi_helper contents to current directory..."
-        mv yisi_helper/* .
-        mv yisi_helper/.* . 2>/dev/null || true
+        cp -r yisi_helper/* .
+        cp -r yisi_helper/.* . 2>/dev/null || true
         rm -rf yisi_helper
         echo ""
         echo "After move:"
