@@ -34,7 +34,6 @@ jobs:
     - name: Build APK
       working-directory: yisi_helper
       run: flutter build apk --release --verbose
-      continue-on-error: true
     
     - name: Check APK
       run: |
