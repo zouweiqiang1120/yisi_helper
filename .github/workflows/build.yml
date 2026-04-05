@@ -69,22 +69,25 @@ jobs:
       if: always()
       id: check_outputs
       run: |
+        echo "=== Current directory ==="
+        pwd
+        echo ""
         echo "=== Looking for APK files ==="
         find . -name "*.apk" -type f 2>/dev/null
         echo ""
-        echo "=== Build directory ==="
+        echo "=== Build directories ==="
         ls -la yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "No APK directory in yisi_helper"
-        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "No APK directory in root"
+        ls -la yisi_helper/yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "No APK in nested yisi_helper"
         echo ""
         echo "=== All build outputs ==="
         ls -laR yisi_helper/build/app/outputs/ 2>/dev/null || echo "No outputs in yisi_helper"
-        ls -laR build/app/outputs/ 2>/dev/null || echo "No outputs in root"
+        find yisi_helper -name "*.apk" -type f 2>/dev/null || echo "No APK found anywhere"
     
     - name: Find and copy APK
       if: success()
       id: find_apk
       run: |
-        # Find the APK file
+        # Find the APK file (search in all possible locations)
         APK_PATH=$(find . -name "app-release.apk" -type f 2>/dev/null | head -1)
         if [ -z "$APK_PATH" ]; then
           echo "Error: APK file not found"
