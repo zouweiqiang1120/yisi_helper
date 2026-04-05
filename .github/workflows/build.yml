@@ -53,7 +53,15 @@ jobs:
       run: |
         flutter clean
         flutter pub get
-        flutter build apk --release --verbose
+        flutter build apk --release --verbose 2>&1 | tee build.log
+      continue-on-error: true
+    
+    - name: Upload build log
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: build-log
+        path: yisi_helper/build.log
     
     - name: Check build outputs
       if: always()
