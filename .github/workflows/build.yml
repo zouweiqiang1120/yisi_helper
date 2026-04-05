@@ -56,3 +56,20 @@ jobs:
       with:
         name: yisi-helper-apk
         path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+    
+    - name: Create Release
+      if: success() && github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v1.0.0+${{ github.run_number }}
+        name: 易思助手 v1.0.0 (Build ${{ github.run_number }})
+        body: |
+          自动构建的 APK 文件
+          
+          构建时间: ${{ github.event.head_commit.timestamp }}
+          提交: ${{ github.sha }}
+        files: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
