@@ -16,6 +16,7 @@ pluginManagement {
         }
         // 尝试常见的 Flutter 安装路径
         def commonPaths = [
+            "/opt/hostedtoolcache/flutter/stable-3.19.0-x64",
             "/opt/hostedtoolcache/flutter/stable-3.16.9-x64",
             "/opt/hostedtoolcache/flutter/stable-3.16.0-x64",
             "/usr/local/flutter",
