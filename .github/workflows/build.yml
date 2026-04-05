@@ -21,6 +21,12 @@ jobs:
         flutter-version: '3.16.9'
         channel: 'stable'
     
+    - name: Setup Android
+      working-directory: yisi_helper
+      run: |
+        flutter config --android-sdk ${ANDROID_SDK_ROOT}
+        flutter doctor -v
+    
     - name: Get dependencies
       working-directory: yisi_helper
       run: flutter pub get
