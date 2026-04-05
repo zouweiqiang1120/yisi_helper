@@ -21,29 +21,28 @@ jobs:
         flutter-version: '3.16.9'
         channel: 'stable'
     
-    - name: Check directory
+    - name: Find Flutter project
       run: |
-        echo "Current directory: $(pwd)"
+        echo "=== Current directory ==="
+        pwd
         ls -la
         echo ""
-        echo "Looking for pubspec.yaml:"
-        find . -name "pubspec.yaml" -type f
+        echo "=== Looking for pubspec.yaml ==="
+        find . -name "pubspec.yaml" -type f 2>/dev/null
+        echo ""
+        echo "=== Check yisi_helper directory ==="
+        ls -la yisi_helper/ 2>/dev/null || echo "No yisi_helper directory"
     
     - name: Get dependencies
+      working-directory: yisi_helper
       run: flutter pub get
     
     - name: Build APK
-      run: flutter build apk --release --verbose 2>&1 | tee build.log
-      continue-on-error: true
+      working-directory: yisi_helper
+      run: flutter build apk --release
     
-    - name: Upload build log
+    - name: Upload APK
       uses: actions/upload-artifact@v4
-      if: always()
       with:
-        name: build-log
-        path: build.log
-    
-    - name: Check APK
-      run: |
-        echo "=== Looking for APK ==="
-        find . -name "*.apk" -type f 2>/dev/null || echo "No APK found"
+        name: yisi-helper-apk
+        path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
