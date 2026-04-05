@@ -26,8 +26,8 @@ jobs:
         echo "Current directory: $(pwd)"
         ls -la
         echo ""
-        echo "yisi_helper directory:"
-        ls -la yisi_helper/
+        echo "Looking for pubspec.yaml:"
+        find . -name "pubspec.yaml" -type f
     
     - name: Get dependencies
       run: |
@@ -37,10 +37,17 @@ jobs:
     - name: Build APK
       run: |
         cd yisi_helper
-        flutter build apk --release
+        flutter build apk --release --verbose 2>&1 | tee build.log
+      continue-on-error: true
     
-    - name: Upload APK
+    - name: Upload build log
       uses: actions/upload-artifact@v4
+      if: always()
       with:
-        name: yisi-helper-apk
-        path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+        name: build-log
+        path: yisi_helper/build.log
+    
+    - name: Check APK
+      run: |
+        echo "=== Looking for APK ==="
+        find yisi_helper -name "*.apk" -type f 2>/dev/null || echo "No APK found"
