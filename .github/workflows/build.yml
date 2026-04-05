@@ -23,29 +23,27 @@ jobs:
     
     - name: Check directory structure
       run: |
-        echo "=== Root directory ==="
+        echo "=== Current directory ==="
         pwd
         ls -la
         echo ""
-        echo "=== yisi_helper directory ==="
-        ls -la yisi_helper/
+        echo "=== Check for pubspec.yaml ==="
+        ls -la pubspec.yaml 2>/dev/null && echo "Found pubspec.yaml in root" || echo "No pubspec.yaml in root"
     
     - name: Get dependencies
-      working-directory: ./yisi_helper
       run: flutter pub get
     
     - name: Build APK
-      working-directory: ./yisi_helper
       run: flutter build apk --release
     
     - name: Find APK
       run: |
         echo "=== Looking for APK ==="
         find . -name "*.apk" -type f
-        ls -la ./yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "No APK in expected location"
+        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "No APK in expected location"
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: yisi-helper-apk
-        path: ./yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+        path: build/app/outputs/flutter-apk/app-release.apk
