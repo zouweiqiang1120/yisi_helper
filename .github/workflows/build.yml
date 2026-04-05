@@ -88,19 +88,23 @@ jobs:
       id: version
       run: |
         VERSION=$(grep "^version:" pubspec.yaml | sed 's/version: //' | sed 's/+/_/' | tr -d ' ')
+        BUILD_TIME=$(date +%Y%m%d_%H%M%S)
         echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "Version: $VERSION"
+        echo "build_time=$BUILD_TIME" >> $GITHUB_OUTPUT
+        echo "tag=v${VERSION}_${BUILD_TIME}" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION, Build: $BUILD_TIME"
     
     - name: Create Release
       if: success() && github.ref == 'refs/heads/main'
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v${{ steps.version.outputs.version }}
-        name: 易思助手 v${{ steps.version.outputs.version }}
+        tag_name: ${{ steps.version.outputs.tag }}
+        name: 易思助手 v${{ steps.version.outputs.version }} (${{ steps.version.outputs.build_time }})
         body: |
           自动构建的 APK 文件
           
-          构建时间: ${{ github.event.head_commit.timestamp }}
+          版本: ${{ steps.version.outputs.version }}
+          构建时间: ${{ steps.version.outputs.build_time }}
           提交: ${{ github.sha }}
         files: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
         draft: false
