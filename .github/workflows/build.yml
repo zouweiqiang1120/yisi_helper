@@ -59,22 +59,43 @@ jobs:
     
     - name: Check build outputs
       if: always()
+      id: check_outputs
       run: |
         echo "=== Looking for APK files ==="
-        find yisi_helper -name "*.apk" -type f 2>/dev/null
+        find . -name "*.apk" -type f 2>/dev/null
         echo ""
         echo "=== Build directory ==="
-        ls -la yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "No APK directory"
+        ls -la yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "No APK directory in yisi_helper"
+        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "No APK directory in root"
         echo ""
         echo "=== All build outputs ==="
-        ls -laR yisi_helper/build/app/outputs/ 2>/dev/null || echo "No outputs directory"
+        ls -laR yisi_helper/build/app/outputs/ 2>/dev/null || echo "No outputs in yisi_helper"
+        ls -laR build/app/outputs/ 2>/dev/null || echo "No outputs in root"
+    
+    - name: Find and copy APK
+      if: success()
+      id: find_apk
+      run: |
+        # Find the APK file
+        APK_PATH=$(find . -name "app-release.apk" -type f 2>/dev/null | head -1)
+        if [ -z "$APK_PATH" ]; then
+          echo "Error: APK file not found"
+          exit 1
+        fi
+        echo "Found APK at: $APK_PATH"
+        
+        # Copy to a known location
+        mkdir -p ./output
+        cp "$APK_PATH" ./output/app-release.apk
+        echo "APK copied to ./output/app-release.apk"
+        ls -la ./output/
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       if: success()
       with:
         name: yisi-helper-apk
-        path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+        path: ./output/app-release.apk
     
     - name: Get version
       if: success()
@@ -100,7 +121,7 @@ jobs:
           版本: ${{ steps.version.outputs.version }}
           构建时间: ${{ steps.version.outputs.build_time }}
           提交: ${{ github.sha }}
-        files: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+        files: ./output/app-release.apk
         draft: false
         prerelease: false
       env:
