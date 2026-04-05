@@ -33,20 +33,18 @@ jobs:
     
     - name: Build APK
       working-directory: yisi_helper
-      run: flutter build apk --release
+      run: flutter build apk --release 2>&1 | tee build.log
+      continue-on-error: true
     
-    - name: Check and copy APK
+    - name: Upload build log
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: build-log
+        path: yisi_helper/build.log
+    
+    - name: Check APK
       run: |
         echo "=== Looking for APK ==="
-        find yisi_helper -name "*.apk" -type f
-        echo ""
-        echo "=== Copy APK to known location ==="
-        mkdir -p output
-        cp yisi_helper/build/app/outputs/flutter-apk/app-release.apk output/yisi-helper.apk || echo "APK not found at expected location"
-        ls -la output/
-    
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: yisi-helper-apk
-        path: output/yisi-helper.apk
+        find yisi_helper -name "*.apk" -type f 2>/dev/null || echo "No APK found"
+        ls -la yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "No APK directory"
