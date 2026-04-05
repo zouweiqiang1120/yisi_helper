@@ -21,22 +21,13 @@ jobs:
         flutter-version: '3.16.9'
         channel: 'stable'
     
-    - name: Move project to root
+    - name: Check directory
       run: |
-        echo "Before move:"
-        pwd
+        echo "Current directory: $(pwd)"
         ls -la
         echo ""
-        echo "Removing existing android directory..."
-        rm -rf android
-        echo ""
-        echo "Moving yisi_helper contents to current directory..."
-        cp -r yisi_helper/* .
-        cp -r yisi_helper/.* . 2>/dev/null || true
-        rm -rf yisi_helper
-        echo ""
-        echo "After move:"
-        ls -la
+        echo "Looking for pubspec.yaml:"
+        ls pubspec.yaml 2>/dev/null && echo "Found pubspec.yaml" || echo "No pubspec.yaml"
     
     - name: Get dependencies
       run: flutter pub get
