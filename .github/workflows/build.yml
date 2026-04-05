@@ -27,10 +27,20 @@ jobs:
     
     - name: Build APK
       working-directory: yisi_helper
-      run: flutter build apk --release
+      run: |
+        flutter build apk --release 2>&1 | tee build_output.log
+        exit ${PIPESTATUS[0]}
+    
+    - name: Upload build output
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: build-failure-log
+        path: yisi_helper/build_output.log
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
+      if: success()
       with:
         name: yisi-helper-apk
         path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
