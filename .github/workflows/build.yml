@@ -53,7 +53,15 @@ jobs:
       run: |
         flutter clean
         flutter pub get
-        flutter build apk --release --target-platform android-arm64
+        flutter build apk --release --target-platform android-arm64 2>&1 | tee build_output.log
+      continue-on-error: true
+    
+    - name: Upload build output log
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: build-output-log
+        path: yisi_helper/build_output.log
     
 
     
