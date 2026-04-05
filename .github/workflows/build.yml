@@ -54,9 +54,15 @@ jobs:
         echo "=== Check build directory ==="
         ls -la yisi_helper/build/ 2>/dev/null || echo "No build directory"
     
+    - name: Copy APK to root
+      run: |
+        mkdir -p $GITHUB_WORKSPACE/apk-output
+        cp yisi_helper/build/app/outputs/flutter-apk/*.apk $GITHUB_WORKSPACE/apk-output/ 2>/dev/null || echo "APK copy failed"
+        ls -la $GITHUB_WORKSPACE/apk-output/
+    
     - name: Upload APK
       uses: actions/upload-artifact@v4
       if: success()
       with:
         name: yisi-helper-apk
-        path: yisi_helper/build/app/outputs/flutter-apk/*.apk
+        path: apk-output/*.apk
