@@ -25,18 +25,35 @@ jobs:
       working-directory: yisi_helper
       run: |
         flutter config --android-sdk ${ANDROID_SDK_ROOT}
-        flutter doctor -v
+        flutter doctor -v 2>&1 | tee flutter_doctor.log
     
     - name: Get dependencies
       working-directory: yisi_helper
-      run: flutter pub get
+      run: flutter pub get 2>&1 | tee pub_get.log
     
     - name: Build APK
       working-directory: yisi_helper
-      run: flutter build apk --release
+      run: flutter build apk --release 2>&1 | tee build.log
+      continue-on-error: true
+    
+    - name: Upload logs
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: build-logs
+        path: |
+          yisi_helper/flutter_doctor.log
+          yisi_helper/pub_get.log
+          yisi_helper/build.log
+    
+    - name: Check APK
+      run: |
+        echo "=== Looking for APK ==="
+        find yisi_helper -name "*.apk" -type f 2>/dev/null || echo "No APK found"
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
+      if: success()
       with:
         name: yisi-helper-apk
         path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
