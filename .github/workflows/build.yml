@@ -18,42 +18,8 @@ jobs:
     
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.19.0'
+        flutter-version: '3.16.9'
         channel: 'stable'
-        cache: true
-    
-    - name: Verify Flutter project
-      run: |
-        echo "=== Current directory ==="
-        pwd
-        ls -la yisi_helper/
-        echo ""
-        echo "=== pubspec.yaml ==="
-        cat yisi_helper/pubspec.yaml | head -10
-    
-    - name: Fix permissions
-      working-directory: yisi_helper
-      run: |
-        sudo chown -R $(whoami) .
-        sudo chmod -R 755 .
-    
-    - name: Create local.properties
-      working-directory: yisi_helper/android
-      run: |
-        echo "flutter.sdk=${FLUTTER_ROOT}" > local.properties
-        echo "sdk.dir=/usr/local/lib/android/sdk" >> local.properties
-        echo "flutter.versionCode=1" >> local.properties
-        echo "flutter.versionName=1.0.0" >> local.properties
-        cat local.properties
-    
-    - name: Check Android project
-      working-directory: yisi_helper/android
-      run: |
-        echo "=== settings.gradle ==="
-        cat settings.gradle
-        echo ""
-        echo "=== app/build.gradle ==="
-        cat app/build.gradle
     
     - name: Get dependencies
       working-directory: yisi_helper
@@ -61,84 +27,10 @@ jobs:
     
     - name: Build APK
       working-directory: yisi_helper
-      run: |
-        flutter clean
-        flutter pub get
-        flutter build apk --release
-    
-
-    
-
-    
-    - name: Check build outputs
-      if: always()
-      id: check_outputs
-      run: |
-        echo "=== Current directory ==="
-        pwd
-        echo ""
-        echo "=== Looking for APK files ==="
-        find . -name "*.apk" -type f 2>/dev/null
-        echo ""
-        echo "=== Build directories ==="
-        ls -la yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "No APK directory in yisi_helper"
-        ls -la yisi_helper/yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "No APK in nested yisi_helper"
-        echo ""
-        echo "=== All build outputs ==="
-        ls -laR yisi_helper/build/app/outputs/ 2>/dev/null || echo "No outputs in yisi_helper"
-        find yisi_helper -name "*.apk" -type f 2>/dev/null || echo "No APK found anywhere"
-    
-    - name: Find and copy APK
-      if: success()
-      id: find_apk
-      run: |
-        # Find the APK file (search in all possible locations)
-        APK_PATH=$(find . -name "app-release.apk" -type f 2>/dev/null | head -1)
-        if [ -z "$APK_PATH" ]; then
-          echo "Error: APK file not found"
-          exit 1
-        fi
-        echo "Found APK at: $APK_PATH"
-        
-        # Copy to a known location
-        mkdir -p ./output
-        cp "$APK_PATH" ./output/app-release.apk
-        echo "APK copied to ./output/app-release.apk"
-        ls -la ./output/
+      run: flutter build apk --release
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
-      if: success()
       with:
         name: yisi-helper-apk
-        path: ./output/app-release.apk
-    
-    - name: Get version
-      if: success()
-      working-directory: yisi_helper
-      id: version
-      run: |
-        VERSION=$(grep "^version:" pubspec.yaml | sed 's/version: //' | sed 's/+/_/' | tr -d ' ')
-        BUILD_TIME=$(date +%Y%m%d_%H%M%S)
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "build_time=$BUILD_TIME" >> $GITHUB_OUTPUT
-        echo "tag=v${VERSION}_${BUILD_TIME}" >> $GITHUB_OUTPUT
-        echo "Version: $VERSION, Build: $BUILD_TIME"
-    
-    - name: Create Release
-      if: success() && github.ref == 'refs/heads/main'
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ steps.version.outputs.tag }}
-        name: 易思助手 v${{ steps.version.outputs.version }} (${{ steps.version.outputs.build_time }})
-        body: |
-          自动构建的 APK 文件
-          
-          版本: ${{ steps.version.outputs.version }}
-          构建时间: ${{ steps.version.outputs.build_time }}
-          提交: ${{ github.sha }}
-        files: ./output/app-release.apk
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
