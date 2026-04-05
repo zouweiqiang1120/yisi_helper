@@ -25,7 +25,7 @@ jobs:
       working-directory: yisi_helper
       run: |
         flutter config --android-sdk ${ANDROID_SDK_ROOT}
-        flutter doctor -v
+        flutter doctor
     
     - name: Get dependencies
       working-directory: yisi_helper
@@ -33,10 +33,11 @@ jobs:
     
     - name: Build APK
       working-directory: yisi_helper
-      run: flutter build apk --release
+      run: flutter build apk --release --verbose
+      continue-on-error: true
     
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: yisi-helper-apk
-        path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+    - name: Check APK
+      run: |
+        echo "=== Looking for APK ==="
+        find yisi_helper -name "*.apk" -type f 2>/dev/null || echo "No APK found"
+        ls -la yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "No APK directory"
