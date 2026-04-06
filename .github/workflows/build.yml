@@ -29,8 +29,13 @@ jobs:
         echo "=== Root directory contents ==="
         ls -la
         echo ""
-        echo "=== yisi_helper directory ==="
-        ls -la yisi_helper/
+        echo "=== Check if yisi_helper exists ==="
+        if [ -d "yisi_helper" ]; then
+          echo "yisi_helper directory exists"
+          ls -la yisi_helper/
+        else
+          echo "yisi_helper directory NOT found"
+        fi
     
     - name: Get dependencies
       run: |
@@ -45,10 +50,10 @@ jobs:
     - name: Check build output
       run: |
         echo "=== Looking for APK ==="
-        find yisi_helper -name "*.apk" -type f 2>/dev/null
+        find . -name "*.apk" -type f 2>/dev/null
         echo ""
-        echo "=== Build directory structure ==="
-        ls -la yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "Directory not found"
+        echo "=== Build directory ==="
+        ls -la yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "APK directory not found"
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
