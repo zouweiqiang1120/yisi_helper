@@ -1,10 +1,37 @@
 pluginManagement {
     def flutterSdkPath = {
         def properties = new Properties()
-        file("local.properties").withInputStream { properties.load(it) }
-        def flutterSdkPath = properties.getProperty("flutter.sdk")
-        assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
-        return flutterSdkPath
+        def localPropertiesFile = file("local.properties")
+        
+        // 首先尝试从 local.properties 读取
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.withInputStream { properties.load(it) }
+            def flutterSdkPath = properties.getProperty("flutter.sdk")
+            if (flutterSdkPath != null) {
+                return flutterSdkPath
+            }
+        }
+        
+        // 如果在 GitHub Actions 环境中，尝试从环境变量读取
+        def envFlutterRoot = System.getenv("FLUTTER_ROOT")
+        if (envFlutterRoot != null) {
+            return envFlutterRoot
+        }
+        
+        // 尝试常见路径
+        def commonPaths = [
+            "/opt/hostedtoolcache/flutter/stable-3.16.9-x64",
+            "/usr/local/flutter",
+            "C:/flutter"
+        ]
+        
+        for (path in commonPaths) {
+            if (file(path).exists()) {
+                return path
+            }
+        }
+        
+        throw new GradleException("Flutter SDK not found. Please set flutter.sdk in local.properties or FLUTTER_ROOT environment variable.")
     }()
 
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")

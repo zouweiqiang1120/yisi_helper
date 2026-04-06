@@ -1,0 +1,58 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.16.9'
+        channel: 'stable'
+    
+    - name: Check project structure
+      run: |
+        echo "=== Current directory ==="
+        pwd
+        echo ""
+        echo "=== Root directory contents ==="
+        ls -la
+        echo ""
+        echo "=== yisi_helper directory ==="
+        ls -la yisi_helper/
+    
+    - name: Get dependencies
+      run: |
+        cd yisi_helper
+        flutter pub get
+    
+    - name: Build APK
+      run: |
+        cd yisi_helper
+        flutter build apk --release
+    
+    - name: Check build output
+      run: |
+        echo "=== Looking for APK ==="
+        find yisi_helper -name "*.apk" -type f 2>/dev/null
+        echo ""
+        echo "=== Build directory structure ==="
+        ls -la yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "Directory not found"
+    
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: yisi-helper-apk
+        path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+        if-no-files-found: warn
