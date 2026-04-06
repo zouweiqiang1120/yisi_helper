@@ -6,32 +6,44 @@ pluginManagement {
         // 首先尝试从 local.properties 读取
         if (localPropertiesFile.exists()) {
             localPropertiesFile.withInputStream { properties.load(it) }
-            def flutterSdkPath = properties.getProperty("flutter.sdk")
-            if (flutterSdkPath != null) {
-                return flutterSdkPath
+            def sdkPath = properties.getProperty("flutter.sdk")
+            if (sdkPath != null && !sdkPath.isEmpty()) {
+                println "Found Flutter SDK in local.properties: $sdkPath"
+                return sdkPath
             }
         }
         
         // 如果在 GitHub Actions 环境中，尝试从环境变量读取
         def envFlutterRoot = System.getenv("FLUTTER_ROOT")
-        if (envFlutterRoot != null) {
+        if (envFlutterRoot != null && !envFlutterRoot.isEmpty()) {
+            println "Found Flutter SDK in FLUTTER_ROOT: $envFlutterRoot"
             return envFlutterRoot
+        }
+        
+        // 尝试 Flutter 命令找到的路径
+        def flutterBinPath = System.getenv("FLUTTER_HOME")
+        if (flutterBinPath != null && !flutterBinPath.isEmpty()) {
+            println "Found Flutter SDK in FLUTTER_HOME: $flutterBinPath"
+            return flutterBinPath
         }
         
         // 尝试常见路径
         def commonPaths = [
             "/opt/hostedtoolcache/flutter/stable-3.16.9-x64",
+            "/opt/hostedtoolcache/flutter/stable--x64",
             "/usr/local/flutter",
-            "C:/flutter"
+            "/opt/flutter",
+            System.getProperty("user.home") + "/flutter"
         ]
         
         for (path in commonPaths) {
             if (file(path).exists()) {
+                println "Found Flutter SDK at common path: $path"
                 return path
             }
         }
         
-        throw new GradleException("Flutter SDK not found. Please set flutter.sdk in local.properties or FLUTTER_ROOT environment variable.")
+        throw new GradleException("Flutter SDK not found. Please set flutter.sdk in local.properties, FLUTTER_ROOT, or FLUTTER_HOME environment variable.")
     }()
 
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")

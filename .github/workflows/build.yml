@@ -21,39 +21,55 @@ jobs:
         flutter-version: '3.16.9'
         channel: 'stable'
     
+    - name: Verify Flutter installation
+      run: |
+        echo "=== Flutter Version ==="
+        flutter --version
+        echo ""
+        echo "=== Flutter Doctor ==="
+        flutter doctor -v || true
+        echo ""
+        echo "=== Environment ==="
+        echo "FLUTTER_ROOT: $FLUTTER_ROOT"
+        echo "PWD: $(pwd)"
+    
     - name: Check project structure
       run: |
-        echo "=== Current directory ==="
-        pwd
-        echo ""
-        echo "=== Root directory contents ==="
+        echo "=== Project Files ==="
         ls -la
         echo ""
-        echo "=== Check for pubspec.yaml ==="
-        if [ -f "pubspec.yaml" ]; then
-          echo "pubspec.yaml found in root directory"
-          cat pubspec.yaml | head -5
-        else
-          echo "pubspec.yaml NOT found in root directory"
-        fi
+        echo "=== pubspec.yaml ==="
+        cat pubspec.yaml
     
-    - name: Get dependencies
-      run: flutter pub get
+    - name: Setup local.properties
+      run: |
+        echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+        echo "=== local.properties ==="
+        cat android/local.properties
+    
+    - name: Clean and get dependencies
+      run: |
+        flutter clean
+        flutter pub get
     
     - name: Build APK
-      run: flutter build apk --release
-    
-    - name: Check build output
       run: |
-        echo "=== Looking for APK ==="
-        find . -name "*.apk" -type f 2>/dev/null
+        flutter build apk --release --verbose
+    
+    - name: Verify APK output
+      run: |
+        echo "=== Build Output Structure ==="
+        find build -name "*.apk" -type f 2>/dev/null | head -20
         echo ""
-        echo "=== Build directory ==="
-        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "APK directory not found"
+        echo "=== APK Directory ==="
+        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "Directory not found"
+        ls -la build/app/outputs/apk/release/ 2>/dev/null || echo "Alternative directory not found"
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: yisi-helper-apk
-        path: build/app/outputs/flutter-apk/app-release.apk
+        path: |
+          build/app/outputs/flutter-apk/*.apk
+          build/app/outputs/apk/release/*.apk
         if-no-files-found: warn
