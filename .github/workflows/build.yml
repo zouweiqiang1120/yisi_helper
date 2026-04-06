@@ -8,9 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./yisi_helper
     steps:
     - uses: actions/checkout@v4
     
@@ -30,14 +27,21 @@ jobs:
         pwd
         ls -la
         echo ""
+        echo "=== yisi_helper directory ==="
+        ls -la yisi_helper/
+        echo ""
         echo "=== Looking for pubspec.yaml ==="
-        find . -name "pubspec.yaml" -type f 2>/dev/null
+        find yisi_helper -name "pubspec.yaml" -type f 2>/dev/null
     
     - name: Get dependencies
-      run: flutter pub get
+      run: |
+        cd yisi_helper
+        flutter pub get
     
     - name: Build APK
-      run: flutter build apk --release
+      run: |
+        cd yisi_helper
+        flutter build apk --release
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
