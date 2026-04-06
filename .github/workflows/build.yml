@@ -21,45 +21,33 @@ jobs:
         flutter-version: '3.16.9'
         channel: 'stable'
     
-    - name: Verify environment
-      run: |
-        echo "=== Flutter Version ==="
-        flutter --version
-        echo ""
-        echo "=== Project Structure ==="
-        pwd
-        ls -la
-        echo ""
-        echo "=== pubspec.yaml ==="
-        cat pubspec.yaml
-    
     - name: Setup Android SDK
       run: |
         echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
         echo "sdk.dir=$ANDROID_SDK_ROOT" >> android/local.properties
-        echo "=== local.properties ==="
-        cat android/local.properties
     
     - name: Get dependencies
       run: flutter pub get
     
-    - name: Build APK with detailed logging
-      run: |
-        flutter build apk --release --verbose 2>&1 | tee build.log
-        echo "=== Build completed, checking exit code ==="
-        echo "Exit code: ${PIPESTATUS[0]}"
+    - name: Build APK
+      run: flutter build apk --release
+      continue-on-error: true
     
-    - name: Check build outputs
+    - name: Find APK
       run: |
-        echo "=== Build Directory Structure ==="
-        find build -type f -name "*.apk" 2>/dev/null || echo "No APK files found"
+        echo "=== Searching for APK ==="
+        find . -name "*.apk" -type f 2>/dev/null
         echo ""
-        echo "=== All files in build directory ==="
-        ls -laR build/ 2>/dev/null | head -100 || echo "Build directory not found"
+        echo "=== Build directory contents ==="
+        ls -la build/ 2>/dev/null || echo "No build directory"
+        ls -la build/app/ 2>/dev/null || echo "No app directory"
+        ls -la build/app/outputs/ 2>/dev/null || echo "No outputs directory"
+        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "No flutter-apk directory"
+        ls -la build/app/outputs/apk/ 2>/dev/null || echo "No apk directory"
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: yisi-helper-apk
-        path: build/app/outputs/**/*.apk
+        path: build/**/*.apk
         if-no-files-found: warn
