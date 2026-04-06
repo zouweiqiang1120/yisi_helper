@@ -21,55 +21,54 @@ jobs:
         flutter-version: '3.16.9'
         channel: 'stable'
     
-    - name: Verify Flutter installation
+    - name: Debug - Check directory structure
       run: |
-        echo "=== Flutter Version ==="
-        flutter --version
+        echo "=== Current Directory ==="
+        pwd
         echo ""
-        echo "=== Flutter Doctor ==="
-        flutter doctor -v || true
-        echo ""
-        echo "=== Environment ==="
-        echo "FLUTTER_ROOT: $FLUTTER_ROOT"
-        echo "PWD: $(pwd)"
-    
-    - name: Check project structure
-      run: |
-        echo "=== Project Files ==="
+        echo "=== All Files in Root ==="
         ls -la
         echo ""
-        echo "=== pubspec.yaml ==="
-        cat pubspec.yaml
+        echo "=== Check for nested yisi_helper ==="
+        ls -la yisi_helper 2>/dev/null || echo "No yisi_helper subdirectory"
+        echo ""
+        echo "=== Find pubspec.yaml ==="
+        find . -name "pubspec.yaml" -type f 2>/dev/null
     
-    - name: Setup local.properties
+    - name: Setup Flutter SDK path
       run: |
         echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
-        echo "=== local.properties ==="
+        echo "sdk.dir=$ANDROID_SDK_ROOT" >> android/local.properties
         cat android/local.properties
     
-    - name: Clean and get dependencies
-      run: |
-        flutter clean
-        flutter pub get
+    - name: Get dependencies
+      run: flutter pub get
     
-    - name: Build APK
+    - name: Build APK with error handling
       run: |
-        flutter build apk --release --verbose
+        set -e
+        flutter build apk --release || {
+          echo "=== Build failed, checking for APK anyway ==="
+          find . -name "*.apk" -type f 2>/dev/null
+          exit 1
+        }
     
-    - name: Verify APK output
+    - name: Find and upload APK
       run: |
-        echo "=== Build Output Structure ==="
-        find build -name "*.apk" -type f 2>/dev/null | head -20
-        echo ""
-        echo "=== APK Directory ==="
-        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "Directory not found"
-        ls -la build/app/outputs/apk/release/ 2>/dev/null || echo "Alternative directory not found"
+        echo "=== Searching for APK ==="
+        APK_PATH=$(find . -name "app-release.apk" -type f 2>/dev/null | head -1)
+        if [ -n "$APK_PATH" ]; then
+          echo "Found APK at: $APK_PATH"
+          mkdir -p output
+          cp "$APK_PATH" output/
+        else
+          echo "APK not found, listing build directory:"
+          find build -name "*.apk" 2>/dev/null || echo "No APK files found"
+        fi
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: yisi-helper-apk
-        path: |
-          build/app/outputs/flutter-apk/*.apk
-          build/app/outputs/apk/release/*.apk
+        path: output/*.apk
         if-no-files-found: warn
