@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./yisi_helper
     steps:
     - uses: actions/checkout@v4
     
@@ -22,7 +25,6 @@ jobs:
         channel: 'stable'
     
     - name: Find Flutter project
-      working-directory: yisi_helper
       run: |
         echo "=== Current directory ==="
         pwd
@@ -30,16 +32,11 @@ jobs:
         echo ""
         echo "=== Looking for pubspec.yaml ==="
         find . -name "pubspec.yaml" -type f 2>/dev/null
-        echo ""
-        echo "=== Check yisi_helper directory ==="
-        ls -la
     
     - name: Get dependencies
-      working-directory: yisi_helper
       run: flutter pub get
     
     - name: Build APK
-      working-directory: yisi_helper
       run: flutter build apk --release
     
     - name: Upload APK
