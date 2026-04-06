@@ -29,25 +29,21 @@ jobs:
     - name: Get dependencies
       run: flutter pub get
     
-    - name: Build APK
-      run: flutter build apk --release
-      continue-on-error: true
-    
-    - name: Find APK
+    - name: Build APK with stacktrace
       run: |
-        echo "=== Searching for APK ==="
-        find . -name "*.apk" -type f 2>/dev/null
-        echo ""
-        echo "=== Build directory contents ==="
-        ls -la build/ 2>/dev/null || echo "No build directory"
-        ls -la build/app/ 2>/dev/null || echo "No app directory"
-        ls -la build/app/outputs/ 2>/dev/null || echo "No outputs directory"
-        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "No flutter-apk directory"
-        ls -la build/app/outputs/apk/ 2>/dev/null || echo "No apk directory"
+        flutter build apk --release --stacktrace 2>&1 | tee build.log || {
+          echo "=== BUILD FAILED ==="
+          echo "=== Build log ==="
+          cat build.log
+          echo ""
+          echo "=== Gradle error log ==="
+          find . -name "*.log" -path "*/build/*" -exec cat {} \; 2>/dev/null || echo "No log files found"
+          exit 1
+        }
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: yisi-helper-apk
-        path: build/**/*.apk
+        path: build/app/outputs/flutter-apk/app-release.apk
         if-no-files-found: warn
