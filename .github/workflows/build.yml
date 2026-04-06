@@ -29,23 +29,19 @@ jobs:
         echo "=== Root directory contents ==="
         ls -la
         echo ""
-        echo "=== Check if yisi_helper exists ==="
-        if [ -d "yisi_helper" ]; then
-          echo "yisi_helper directory exists"
-          ls -la yisi_helper/
+        echo "=== Check for pubspec.yaml ==="
+        if [ -f "pubspec.yaml" ]; then
+          echo "pubspec.yaml found in root directory"
+          cat pubspec.yaml | head -5
         else
-          echo "yisi_helper directory NOT found"
+          echo "pubspec.yaml NOT found in root directory"
         fi
     
     - name: Get dependencies
-      run: |
-        cd yisi_helper
-        flutter pub get
+      run: flutter pub get
     
     - name: Build APK
-      run: |
-        cd yisi_helper
-        flutter build apk --release
+      run: flutter build apk --release
     
     - name: Check build output
       run: |
@@ -53,11 +49,11 @@ jobs:
         find . -name "*.apk" -type f 2>/dev/null
         echo ""
         echo "=== Build directory ==="
-        ls -la yisi_helper/build/app/outputs/flutter-apk/ 2>/dev/null || echo "APK directory not found"
+        ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "APK directory not found"
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: yisi-helper-apk
-        path: yisi_helper/build/app/outputs/flutter-apk/app-release.apk
+        path: build/app/outputs/flutter-apk/app-release.apk
         if-no-files-found: warn
