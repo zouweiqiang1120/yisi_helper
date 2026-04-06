@@ -21,54 +21,45 @@ jobs:
         flutter-version: '3.16.9'
         channel: 'stable'
     
-    - name: Debug - Check directory structure
+    - name: Verify environment
       run: |
-        echo "=== Current Directory ==="
-        pwd
+        echo "=== Flutter Version ==="
+        flutter --version
         echo ""
-        echo "=== All Files in Root ==="
+        echo "=== Project Structure ==="
+        pwd
         ls -la
         echo ""
-        echo "=== Check for nested yisi_helper ==="
-        ls -la yisi_helper 2>/dev/null || echo "No yisi_helper subdirectory"
-        echo ""
-        echo "=== Find pubspec.yaml ==="
-        find . -name "pubspec.yaml" -type f 2>/dev/null
+        echo "=== pubspec.yaml ==="
+        cat pubspec.yaml
     
-    - name: Setup Flutter SDK path
+    - name: Setup Android SDK
       run: |
         echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
         echo "sdk.dir=$ANDROID_SDK_ROOT" >> android/local.properties
+        echo "=== local.properties ==="
         cat android/local.properties
     
     - name: Get dependencies
       run: flutter pub get
     
-    - name: Build APK with error handling
+    - name: Build APK with detailed logging
       run: |
-        set -e
-        flutter build apk --release || {
-          echo "=== Build failed, checking for APK anyway ==="
-          find . -name "*.apk" -type f 2>/dev/null
-          exit 1
-        }
+        flutter build apk --release --verbose 2>&1 | tee build.log
+        echo "=== Build completed, checking exit code ==="
+        echo "Exit code: ${PIPESTATUS[0]}"
     
-    - name: Find and upload APK
+    - name: Check build outputs
       run: |
-        echo "=== Searching for APK ==="
-        APK_PATH=$(find . -name "app-release.apk" -type f 2>/dev/null | head -1)
-        if [ -n "$APK_PATH" ]; then
-          echo "Found APK at: $APK_PATH"
-          mkdir -p output
-          cp "$APK_PATH" output/
-        else
-          echo "APK not found, listing build directory:"
-          find build -name "*.apk" 2>/dev/null || echo "No APK files found"
-        fi
+        echo "=== Build Directory Structure ==="
+        find build -type f -name "*.apk" 2>/dev/null || echo "No APK files found"
+        echo ""
+        echo "=== All files in build directory ==="
+        ls -laR build/ 2>/dev/null | head -100 || echo "Build directory not found"
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: yisi-helper-apk
-        path: output/*.apk
+        path: build/app/outputs/**/*.apk
         if-no-files-found: warn
