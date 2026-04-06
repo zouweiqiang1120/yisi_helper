@@ -29,17 +29,8 @@ jobs:
     - name: Get dependencies
       run: flutter pub get
     
-    - name: Build APK with stacktrace
-      run: |
-        flutter build apk --release --stacktrace 2>&1 | tee build.log || {
-          echo "=== BUILD FAILED ==="
-          echo "=== Build log ==="
-          cat build.log
-          echo ""
-          echo "=== Gradle error log ==="
-          find . -name "*.log" -path "*/build/*" -exec cat {} \; 2>/dev/null || echo "No log files found"
-          exit 1
-        }
+    - name: Build APK
+      run: flutter build apk --release
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
